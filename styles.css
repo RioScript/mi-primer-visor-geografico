@@ -630,8 +630,10 @@ input[type="file"]::file-selector-button {
 }
 @media (max-width: 520px) {
     .main-nav .nav-link[data-section="app-footer"] { display: none; }
-    .brand-copy strong { font-size: 1.05rem; }
+    .brand-copy strong { font-size: 1.04rem; }
 }
 
 /* El acceso se abre desde la pantalla de bienvenida, por eso debe quedar por encima */
-#modal-auth { z-index: 31000; }
+#modal-auth { 
+    z-index: 31000; 
+}
