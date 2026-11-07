@@ -1,0 +1,14 @@
+{
+"type": "FeatureCollection",
+"name": "canchas_enriquecidas_gdal",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:OGC:1.3:CRS84" } },
+"features": [
+{"type":"Feature","properties":{"cancha_id":3,"nombre":"Cancha Pan de Azúcar ","superficie":"grass","num_opiniones":0,"promedio_est":0.0,"num_eventos":0,"indice_uso":"Uso Estándar"},"geometry":{"type":"Point","coordinates":[-75.6309549,6.14143454,0.0]}},
+{"type":"Feature","properties":{"cancha_id":1,"nombre":"Cancha indesa","superficie":"grass","num_opiniones":0,"promedio_est":0.0,"num_eventos":1,"indice_uso":"Uso Estándar"},"geometry":{"type":"Point","coordinates":[-75.62145158,6.14934116,0.0]}},
+{"type":"Feature","properties":{"cancha_id":2,"nombre":"Cancha de Fútbol la 43a","superficie":"concrete","num_opiniones":0,"promedio_est":0.0,"num_eventos":1,"indice_uso":"Uso Estándar"},"geometry":{"type":"Point","coordinates":[-75.610338142105263,6.152511647368421,0.0]}},
+{"type":"Feature","properties":{"cancha_id":6,"nombre":"Cancha Sintetica La Doctora\r\n","superficie":"grass","num_opiniones":0,"promedio_est":0.0,"num_eventos":0,"indice_uso":"Uso Estándar"},"geometry":{"type":"Point","coordinates":[-75.59953156,6.14877584,0.0]}},
+{"type":"Feature","properties":{"cancha_id":7,"nombre":"Placa Microfútbol La Doctora\r\n","superficie":"concrete","num_opiniones":0,"promedio_est":0.0,"num_eventos":0,"indice_uso":"Uso Estándar"},"geometry":{"type":"Point","coordinates":[-75.60176092,6.15099634,0.0]}},
+{"type":"Feature","properties":{"cancha_id":4,"nombre":"Unidad Deportiva Zona Norte","superficie":"grass","num_opiniones":0,"promedio_est":0.0,"num_eventos":0,"indice_uso":"Uso Estándar"},"geometry":{"type":"Point","coordinates":[-75.61111396,6.1581057,0.0]}},
+{"type":"Feature","properties":{"cancha_id":5,"nombre":"Placa Polideportiva Villas del Carmen","superficie":"concrete","num_opiniones":0,"promedio_est":0.0,"num_eventos":0,"indice_uso":"Uso Estándar"},"geometry":{"type":"Point","coordinates":[-75.6058196,6.15486084,0.0]}}
+]
+}

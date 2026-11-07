@@ -1,0 +1,869 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Canchas Sabaneta | Geoportal de canchas de fútbol en Sabaneta</title>
+    <meta name="description"
+        content="Geoportal para encontrar canchas de fútbol en Sabaneta: ubicación, superficie, rutas de acceso, eventos y torneos.">
+    <meta name="theme-color" content="#0d2a23">
+
+    <!-- Tipografía -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Public+Sans:wght@400;500;600;700&display=swap"
+        rel="stylesheet">
+
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <!-- Leaflet Routing Machine CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.css" />
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+
+    <!-- Sprite de iconos (se usan con <svg class="icon"><use href="#i-..."/></svg>) -->
+    <svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute" aria-hidden="true"
+        focusable="false">
+        <defs>
+            <symbol id="i-search" viewBox="0 0 24 24">
+                <circle cx="11" cy="11" r="8" />
+                <path d="m21 21-4.3-4.3" />
+            </symbol>
+            <symbol id="i-sliders" viewBox="0 0 24 24">
+                <path d="M21 4h-7M10 4H3M21 12h-9M8 12H3M21 20h-5M12 20H3M14 2v4M8 10v4M16 18v4" />
+            </symbol>
+            <symbol id="i-layers" viewBox="0 0 24 24">
+                <path
+                    d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z" />
+                <path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65" />
+                <path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65" />
+            </symbol>
+            <symbol id="i-pin" viewBox="0 0 24 24">
+                <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
+                <circle cx="12" cy="10" r="3" />
+            </symbol>
+            <symbol id="i-star" viewBox="0 0 24 24">
+                <path
+                    d="m12 2 3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2Z" />
+            </symbol>
+            <symbol id="i-x" viewBox="0 0 24 24">
+                <path d="M18 6 6 18M6 6l12 12" />
+            </symbol>
+            <symbol id="i-chevron" viewBox="0 0 24 24">
+                <path d="m6 9 6 6 6-6" />
+            </symbol>
+            <symbol id="i-target" viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="10" />
+                <circle cx="12" cy="12" r="6" />
+                <circle cx="12" cy="12" r="2" />
+            </symbol>
+            <symbol id="i-shield" viewBox="0 0 24 24">
+                <path
+                    d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z" />
+            </symbol>
+            <symbol id="i-trophy" viewBox="0 0 24 24">
+                <path
+                    d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6M18 9h1.5a2.5 2.5 0 0 0 0-5H18M4 22h16M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22M18 2H6v7a6 6 0 0 0 12 0V2Z" />
+            </symbol>
+            <symbol id="i-users" viewBox="0 0 24 24">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                <circle cx="9" cy="7" r="4" />
+                <path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
+            </symbol>
+            <symbol id="i-route" viewBox="0 0 24 24">
+                <circle cx="6" cy="19" r="3" />
+                <path d="M9 19h8.5a3.5 3.5 0 0 0 0-7h-11a3.5 3.5 0 0 1 0-7H15" />
+                <circle cx="18" cy="5" r="3" />
+            </symbol>
+            <symbol id="i-bus" viewBox="0 0 24 24">
+                <path
+                    d="M8 6v6M15 6v6M2 12h19.6M18 18h3s.5-1.7.8-2.8c.1-.4.2-.8.2-1.2 0-.4-.1-.8-.2-1.2l-1.4-5C20.1 6.8 19.1 6 18 6H4a2 2 0 0 0-2 2v10h3" />
+                <circle cx="7" cy="18" r="2" />
+                <path d="M9 18h5" />
+                <circle cx="16" cy="18" r="2" />
+            </symbol>
+            <symbol id="i-metro" viewBox="0 0 24 24">
+                <rect width="16" height="16" x="4" y="3" rx="2" />
+                <path d="M4 11h16M12 3v8M8 19l-2 3M18 22l-2-3M8 15h.01M16 15h.01" />
+            </symbol>
+            <symbol id="i-chart" viewBox="0 0 24 24">
+                <path d="M3 3v16a2 2 0 0 0 2 2h16" />
+                <path d="M18 17V9M13 17V5M8 17v-3" />
+            </symbol>
+            <symbol id="i-road" viewBox="0 0 24 24">
+                <path d="M4 22 8 2M20 22 16 2M12 6v2M12 12v2M12 18v2" />
+            </symbol>
+            <symbol id="i-polygon" viewBox="0 0 24 24">
+                <path d="M12 2.5 21 9l-3.5 11.5h-11L3 9z" />
+            </symbol>
+            <symbol id="i-key" viewBox="0 0 24 24">
+                <circle cx="7.5" cy="15.5" r="5.5" />
+                <path d="m21 2-9.6 9.6M15.5 7.5l3 3L22 7l-3-3" />
+            </symbol>
+            <symbol id="i-image" viewBox="0 0 24 24">
+                <rect width="18" height="18" x="3" y="3" rx="2" />
+                <circle cx="9" cy="9" r="2" />
+                <path d="m21 15-3.09-3.09a2 2 0 0 0-2.82 0L6 21" />
+            </symbol>
+            <symbol id="i-refresh" viewBox="0 0 24 24">
+                <path
+                    d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8M21 3v5h-5M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16M8 16H3v5" />
+            </symbol>
+            <symbol id="i-plus" viewBox="0 0 24 24">
+                <path d="M5 12h14M12 5v14" />
+            </symbol>
+            <symbol id="i-check" viewBox="0 0 24 24">
+                <path d="M20 6 9 17l-5-5" />
+            </symbol>
+        </defs>
+    </svg>
+
+    <!-- ============ PANTALLA DE BIENVENIDA Y ACCESO ============ -->
+    <div id="intro-overlay" class="intro-overlay">
+        <svg class="intro-contours" viewBox="0 0 800 600" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+            <g fill="none" stroke="currentColor" stroke-width="1">
+                <path d="M-20 420C80 380 150 430 250 400S420 300 520 330 700 420 820 360" />
+                <path d="M-20 450C90 410 160 460 260 430S430 330 530 360 710 450 820 390" />
+                <path d="M-20 480C100 440 170 490 270 460S440 360 540 390 720 480 820 420" />
+                <path d="M-20 510C110 470 180 520 280 490S450 390 550 420 730 510 820 450" />
+                <path d="M-20 540C120 500 190 550 290 520S460 420 560 450 740 540 820 480" />
+                <path d="M-20 570C130 530 200 580 300 550S470 450 570 480 750 570 820 510" />
+                <path d="M120 120C170 60 270 50 330 100S430 190 380 240 230 270 160 230 70 170 120 120Z" />
+                <path d="M160 130C195 90 265 85 305 120S375 185 340 220 240 240 190 212 130 165 160 130Z" />
+                <path d="M200 148C222 125 262 124 285 146S325 186 305 205 250 215 222 198 180 170 200 148Z" />
+                <path d="M560 60C610 30 700 40 740 90S760 190 700 220 590 210 550 160 520 90 560 60Z" />
+                <path d="M590 85C626 66 690 72 715 108S722 172 682 192 612 186 586 152 560 105 590 85Z" />
+            </g>
+        </svg>
+
+        <div class="intro-card" role="dialog" aria-modal="true" aria-labelledby="intro-titulo">
+            <div class="intro-brand">
+                <span class="brand-mark" aria-hidden="true">
+                    <svg viewBox="0 0 32 32" class="brand-mark__svg">
+                        <rect x="5" y="7" width="22" height="18" rx="2" />
+                        <path d="M16 7v18" />
+                        <circle cx="16" cy="16" r="3.6" />
+                    </svg>
+                </span>
+                <span class="intro-brand__name">Canchas Sabaneta</span>
+                <span class="intro-status"><span class="status-dot"></span>Servicio en línea</span>
+            </div>
+
+            <h1 id="intro-titulo" class="intro-titulo">Encuentra dónde jugar fútbol en Sabaneta</h1>
+
+            <p class="intro-descripcion">
+                Geoportal con las canchas del municipio: ubicación, superficie, cómo llegar y los partidos o torneos
+                que se organizan en cada una.
+            </p>
+
+            <ul class="intro-caracteristicas">
+                <li class="caract-item"><svg class="icon">
+                        <use href="#i-pin" />
+                    </svg><span>Ubicación y ficha técnica de cada cancha</span></li>
+                <li class="caract-item"><svg class="icon">
+                        <use href="#i-layers" />
+                    </svg><span>Límite municipal, vías, metro y paraderos como capas</span></li>
+                <li class="caract-item"><svg class="icon">
+                        <use href="#i-route" />
+                    </svg><span>Rutas a pie, en vehículo o desde el paradero más cercano</span></li>
+                <li class="caract-item"><svg class="icon">
+                        <use href="#i-trophy" />
+                    </svg><span>Retos, partidos recreativos y torneos de la comunidad</span></li>
+            </ul>
+
+            <div class="intro-acciones">
+                <button type="button" id="btn-abrir-auth" class="btn btn--primary btn--lg">
+                    <svg class="icon">
+                        <use href="#i-key" />
+                    </svg>
+                    Iniciar sesión o crear cuenta
+                </button>
+                <button type="button" id="btn-invitado" class="btn btn--ghost btn--lg">
+                    Continuar como invitado
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============ MODAL DE AUTENTICACIÓN ============ -->
+    <div id="modal-auth" class="modal-overlay oculto">
+        <div class="modal-content modal-content--sm" role="dialog" aria-modal="true" aria-labelledby="auth-titulo">
+            <button type="button" id="btn-cerrar-auth" class="modal-cerrar" aria-label="Cerrar">
+                <svg class="icon">
+                    <use href="#i-x" />
+                </svg>
+            </button>
+
+            <h3 id="auth-titulo" class="modal-titulo">Acceso a la plataforma</h3>
+            <p class="modal-subtexto">Ingresa con tu cuenta o crea una nueva para publicar eventos y calificar canchas.
+            </p>
+
+            <div class="tabs" role="tablist">
+                <button type="button" id="tab-login" class="tab is-active" role="tab">Iniciar sesión</button>
+                <button type="button" id="tab-register" class="tab" role="tab">Crear cuenta</button>
+            </div>
+
+            <form id="form-auth" class="form-stack">
+                <div class="grupo-campo">
+                    <label for="auth-email">Correo electrónico</label>
+                    <input type="email" id="auth-email" class="input-reserva" placeholder="nombre@correo.com"
+                        autocomplete="email" required />
+                </div>
+                <div class="grupo-campo">
+                    <label for="auth-password">Contraseña</label>
+                    <input type="password" id="auth-password" class="input-reserva" placeholder="Mínimo 6 caracteres"
+                        autocomplete="current-password" required />
+                </div>
+
+                <button type="submit" id="btn-submit-auth" class="btn btn--primary btn--block">
+                    <span id="btn-auth-text">INGRESAR AL VISOR</span>
+                </button>
+
+                <p id="auth-mensaje" class="form-mensaje" role="status"></p>
+            </form>
+        </div>
+    </div>
+
+    <!-- ============ CABECERA ============ -->
+    <header class="app-header">
+        <a class="brand" href="#mapa" aria-label="Canchas Sabaneta, ir al mapa">
+            <span class="brand-mark" aria-hidden="true">
+                <svg viewBox="0 0 32 32" class="brand-mark__svg">
+                    <rect x="5" y="7" width="22" height="18" rx="2" />
+                    <path d="M16 7v18" />
+                    <circle cx="16" cy="16" r="3.6" />
+                </svg>
+            </span>
+            <span class="brand-copy">
+                <strong>Canchas Sabaneta</strong>
+                <small>Geoportal deportivo de Sabaneta</small>
+            </span>
+        </a>
+
+        <nav class="main-nav" aria-label="Navegación principal">
+            <a href="#mapa" class="nav-link active" data-section="mapa">Mapa</a>
+            <a href="#canchas" class="nav-link" data-section="canchas">Canchas</a>
+            <a href="#mapa" class="nav-link" data-open="capas">Capas GIS</a>
+            <a href="#app-footer" class="nav-link" data-section="app-footer">Proyecto</a>
+        </nav>
+
+        <div class="header-actions">
+            <div class="header-status" title="Conexión con la base de datos geográfica">
+                <span class="status-indicator"></span>
+                <span>Servicio geográfico</span>
+            </div>
+            <!-- Aquí se inserta el botón de administración cuando el usuario es admin -->
+            <div id="header-acciones" class="header-slot"></div>
+        </div>
+    </header>
+
+    <main>
+        <!-- ============ ÁREA DE MAPA ============ -->
+        <section id="mapa" class="workspace" aria-label="Mapa interactivo de canchas">
+            <div id="map" class="mapa-container"></div>
+
+            <div class="map-ui">
+                <!-- Búsqueda + filtros -->
+                <div class="map-ui__left">
+                    <div class="searchbar" role="search">
+                        <svg class="icon searchbar__icon">
+                            <use href="#i-search" />
+                        </svg>
+                        <input type="search" id="buscador-canchas" class="input-filtro"
+                            placeholder="Buscar cancha por nombre" aria-label="Buscar cancha por nombre"
+                            autocomplete="off">
+                        <button type="button" id="btn-toggle-filtros" class="searchbar__btn" aria-expanded="false"
+                            aria-controls="panel-filtros">
+                            <svg class="icon">
+                                <use href="#i-sliders" />
+                            </svg>
+                            <span>Filtros</span>
+                            <span id="filtros-activos-badge" class="badge oculto">0</span>
+                        </button>
+                    </div>
+
+                    <div id="panel-filtros" class="popover oculto" role="group" aria-label="Filtros de canchas">
+                        <div class="popover__head">
+                            <h2>Filtros</h2>
+                            <button type="button" id="btn-limpiar-filtros" class="link-btn">Limpiar todo</button>
+                        </div>
+
+                        <div class="popover__body">
+                            <div class="field-group">
+                                <span class="field-label">Barrio</span>
+                                <div class="custom-select-wrapper" id="wrapper-barrio">
+                                    <div class="custom-select" id="select-barrio-trigger" role="button" tabindex="0"
+                                        aria-haspopup="listbox">
+                                        <span id="select-barrio-texto">Todos los barrios</span>
+                                        <svg class="icon select-flecha">
+                                            <use href="#i-chevron" />
+                                        </svg>
+                                    </div>
+                                    <div class="custom-options" id="select-barrio-opciones" role="listbox">
+                                        <div class="custom-option" data-value="">Todos los barrios</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="field-group">
+                                <label class="field-label" for="select-orden-estrellas">Ordenar por calificación</label>
+                                <select id="select-orden-estrellas" class="select-nativo">
+                                    <option value="">Sin ordenar</option>
+                                    <option value="mayor">De mayor a menor</option>
+                                    <option value="menor">De menor a mayor</option>
+                                </select>
+                            </div>
+
+                            <div class="field-group">
+                                <span class="field-label">Mis canchas</span>
+                                <label class="check">
+                                    <input type="checkbox" id="filtro-favoritos">
+                                    <span>Solo mis favoritas</span>
+                                </label>
+                            </div>
+
+                            <div class="field-group">
+                                <span class="field-label">Comunidad y eventos</span>
+                                <label class="check">
+                                    <input type="checkbox" id="filtro-retos">
+                                    <span>Retos y apostados <small>buscan rival</small></span>
+                                </label>
+                                <label class="check">
+                                    <input type="checkbox" id="filtro-recreativos">
+                                    <span>Partidos recreativos</span>
+                                </label>
+                                <label class="check">
+                                    <input type="checkbox" id="filtro-faltan-jugadores">
+                                    <span>Faltan jugadores</span>
+                                </label>
+                                <label class="check">
+                                    <input type="checkbox" id="filtro-torneos">
+                                    <span>Torneos activos</span>
+                                </label>
+                                <label class="check check--separated">
+                                    <input type="checkbox" id="filtro-modo-espectador">
+                                    <span>Ver próximos eventos <small>modo espectador</small></span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Capas -->
+                <div class="map-ui__right">
+                    <button type="button" id="btn-toggle-capas" class="fab-btn" aria-expanded="false"
+                        aria-controls="panel-capas">
+                        <svg class="icon">
+                            <use href="#i-layers" />
+                        </svg>
+                        <span>Capas</span>
+                    </button>
+
+                    <div id="panel-capas" class="popover popover--right oculto" role="group"
+                        aria-label="Capas del mapa">
+                        <div class="popover__head">
+                            <h2>Capas del mapa</h2>
+                        </div>
+
+                        <div class="popover__body">
+                            <label class="layer-row">
+                                <span class="layer-icon" style="--c:#ef4444"><svg class="icon">
+                                        <use href="#i-polygon" />
+                                    </svg></span>
+                                <span class="layer-name">Límite municipal</span>
+                                <input type="checkbox" id="toggle-limite" class="switch" checked>
+                            </label>
+                            <label class="layer-row">
+                                <span class="layer-icon" style="--c:#d97706"><svg class="icon">
+                                        <use href="#i-road" />
+                                    </svg></span>
+                                <span class="layer-name">Vías y calles</span>
+                                <input type="checkbox" id="toggle-vias" class="switch" checked>
+                            </label>
+                            <label class="layer-row">
+                                <span class="layer-icon" style="--c:#9333ea"><svg class="icon">
+                                        <use href="#i-chart" />
+                                    </svg></span>
+                                <span class="layer-name">Análisis espacial</span>
+                                <input type="checkbox" id="toggle-gdal" class="switch" checked>
+                            </label>
+                            <label class="layer-row">
+                                <span class="layer-icon" style="--c:#ea580c"><svg class="icon">
+                                        <use href="#i-metro" />
+                                    </svg></span>
+                                <span class="layer-name">Estaciones del metro</span>
+                                <input type="checkbox" id="toggle-metro" class="switch" checked>
+                            </label>
+                            <label class="layer-row">
+                                <span class="layer-icon" style="--c:#2563eb"><svg class="icon">
+                                        <use href="#i-bus" />
+                                    </svg></span>
+                                <span class="layer-name">Paraderos de buses</span>
+                                <input type="checkbox" id="toggle-paraderos" class="switch" checked>
+                            </label>
+
+                            <button id="btn-toggle-enfoque" type="button" class="btn btn--secondary btn--block">
+                                <svg class="icon">
+                                    <use href="#i-target" />
+                                </svg>
+                                <span id="btn-enfoque-texto">Enfocar Sabaneta</span>
+                            </button>
+
+                            <div class="legend">
+                                <span class="field-label">Superficie de la cancha</span>
+                                <ul>
+                                    <li><span class="legend__dot" style="--c:#10b981"></span>Sintética o grama natural
+                                    </li>
+                                    <li><span class="legend__dot" style="--c:#6366f1"></span>Pavimentada</li>
+                                    <li><span class="legend__dot" style="--c:#f59e0b"></span>Otra o sin dato</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Coordenadas del último clic -->
+                <div class="map-ui__bottom">
+                    <div id="coordenadas" class="coordenadas-footer" title="Coordenadas del último clic en el mapa">
+                        Lat: 0.00000, Lng: 0.00000</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ============ INDICADORES ============ -->
+        <section class="kpi-band" aria-label="Indicadores">
+            <div id="panel-estadisticas" class="panel-estadisticas">
+                <span class="kpi-loading">Cargando estadísticas...</span>
+            </div>
+        </section>
+
+        <!-- ============ LISTADO DE CANCHAS ============ -->
+        <section id="canchas" class="section">
+            <div class="section__head">
+                <div>
+                    <h2>Canchas en Sabaneta</h2>
+                    <p>Escenarios con ubicación, superficie y calificación de la comunidad. Los filtros del mapa también
+                        se aplican aquí.</p>
+                </div>
+                <span class="count-pill"><b id="contador-total">0</b> registradas</span>
+            </div>
+
+            <div id="contenedor-lista-canchas" class="lista-canchas">
+                <p class="cargando-texto">Cargando canchas...</p>
+            </div>
+        </section>
+    </main>
+
+    <!-- ============ PIE DE PÁGINA ============ -->
+    <footer id="app-footer" class="app-footer">
+        <svg class="footer-contours" viewBox="0 0 800 400" preserveAspectRatio="xMaxYMid slice" aria-hidden="true">
+            <g fill="none" stroke="currentColor" stroke-width="1">
+                <path d="M420 60C500 10 640 20 720 80S790 220 700 280 500 330 430 270 340 110 420 60Z" />
+                <path d="M455 85C520 50 625 58 685 105S740 205 672 250 520 290 470 244 395 120 455 85Z" />
+                <path d="M490 112C540 88 610 94 650 128S690 195 645 225 540 250 507 218 450 138 490 112Z" />
+                <path d="M525 140C555 126 598 130 622 152S640 190 614 205 560 212 540 194 500 154 525 140Z" />
+            </g>
+        </svg>
+
+        <div class="footer-inner">
+            <div class="footer-lead">
+                <p class="footer-wordmark">Canchas Sabaneta</p>
+                <p class="footer-lead__text">Geoportal de las canchas de fútbol de Sabaneta, Antioquia. Proyecto
+                    académico
+                    de tecnologías geoespaciales y desarrollo web.</p>
+                <nav class="footer-links" aria-label="Atajos">
+                    <a href="#mapa">Ir al mapa</a>
+                    <a href="#canchas">Ver canchas</a>
+                    <a href="#mapa" data-open="capas">Abrir capas</a>
+                </nav>
+            </div>
+
+            <dl class="footer-meta">
+                <div>
+                    <dt>Mapa base</dt>
+                    <dd>OpenStreetMap</dd>
+                </div>
+                <div>
+                    <dt>Rutas</dt>
+                    <dd>OSRM con Leaflet Routing Machine</dd>
+                </div>
+                <div>
+                    <dt>Base de datos</dt>
+                    <dd>Supabase con PostGIS</dd>
+                </div>
+                <div>
+                    <dt>Análisis espacial</dt>
+                    <dd>GDAL y capas GeoJSON</dd>
+                </div>
+                <div>
+                    <dt>Coordenadas</dt>
+                    <dd>WGS 84, latitud y longitud</dd>
+                </div>
+            </dl>
+        </div>
+
+        <p class="footer-credit">Mapa © colaboradores de OpenStreetMap. Sabaneta, Valle de Aburrá.</p>
+    </footer>
+
+    <!-- ============ DETALLE DE CANCHA (PANEL LATERAL) ============ -->
+    <div id="modal-overlay" class="modal-overlay modal-overlay--drawer oculto">
+        <aside class="modal-content drawer" role="dialog" aria-modal="true" aria-labelledby="modal-titulo">
+            <button id="modal-cerrar" type="button" class="modal-cerrar modal-cerrar--float"
+                aria-label="Cerrar detalle">
+                <svg class="icon">
+                    <use href="#i-x" />
+                </svg>
+            </button>
+
+            <div class="drawer__scroll">
+                <div id="modal-imagen-contenedor">
+                    <img id="modal-imagen" src="" alt="Foto de la cancha" />
+                </div>
+
+                <div class="drawer__body">
+                    <h3 id="modal-titulo" class="modal-titulo">Nombre de la cancha</h3>
+                    <p id="modal-detalle" class="modal-subtexto">Detalles de superficie</p>
+                    <p id="modal-horario" class="modal-subtexto">Horario</p>
+
+                    <div class="modal-acciones">
+                        <button id="btn-trazar-ruta" type="button" class="btn btn--primary">
+                            <svg class="icon">
+                                <use href="#i-route" />
+                            </svg>
+                            ¿Cómo llegar?
+                        </button>
+                        <button id="btn-favorito-modal" type="button" class="btn btn--secondary">☆ Marcar como
+                            Favorito</button>
+                        <button type="button" class="btn btn--secondary" id="btn-eventos-overlay">
+                            <svg class="icon">
+                                <use href="#i-trophy" />
+                            </svg>
+                            Eventos y partidos
+                        </button>
+                    </div>
+
+                    <div id="seccion-opciones-ruta" class="seccion-opciones-ruta oculto">
+                        <button id="btn-ruta-vehiculo" type="button" class="btn-sub-ruta btn-vehiculo">En
+                            vehículo</button>
+                        <button id="btn-ruta-apie" type="button" class="btn-sub-ruta btn-apie">A pie</button>
+                        <button id="btn-ruta-bus-publico" type="button" class="btn-sub-ruta btn-bus">Bus o paradero
+                            cercano</button>
+                    </div>
+
+                    <div id="seccion-eventos-hub" class="seccion-reserva oculto">
+                        <div class="hub-head">
+                            <h4>Comunidad y partidos</h4>
+                            <button type="button" id="btn-toggle-form-evento" class="btn btn--primary btn--sm">
+                                <svg class="icon">
+                                    <use href="#i-plus" />
+                                </svg>
+                                Publicar evento
+                            </button>
+                        </div>
+
+                        <form id="form-crear-evento" class="panel-form oculto">
+                            <div class="hub-head">
+                                <h5>Nuevo encuentro deportivo</h5>
+                                <button type="button" id="btn-cerrar-form-evento" class="icon-btn" title="Cancelar"
+                                    aria-label="Cancelar">
+                                    <svg class="icon">
+                                        <use href="#i-x" />
+                                    </svg>
+                                </button>
+                            </div>
+
+                            <div class="grupo-campo">
+                                <label for="evento-tipo">Tipo de evento</label>
+                                <select id="evento-tipo" class="input-reserva" required>
+                                    <option value="Partido Recreativo">Partido Recreativo</option>
+                                    <option value="Reto / Apostado">Reto / Apostado</option>
+                                    <option value="Torneo">Torneo Municipal / Barrial</option>
+                                </select>
+                            </div>
+
+                            <div id="seccion-campos-partido">
+                                <div class="grupo-campo">
+                                    <label><input type="checkbox" id="evento-necesita-rival"> ¿Necesita rival o
+                                        contrincante?</label>
+                                </div>
+                                <div class="grupo-campo" id="wrap-formato" style="display: none;">
+                                    <label for="evento-formato">Formato del partido</label>
+                                    <input type="text" id="evento-formato" class="input-reserva"
+                                        placeholder="Ej: 5 vs 5" />
+                                </div>
+                                <div class="grupo-campo">
+                                    <label><input type="checkbox" id="evento-faltan-jugadores"> ¿Le faltan jugadores a
+                                        tu equipo?</label>
+                                </div>
+                                <div class="grupo-campo" id="wrap-cant-faltantes" style="display: none;">
+                                    <label for="evento-faltantes">¿Cuántos jugadores faltan?</label>
+                                    <input type="number" id="evento-faltantes" class="input-reserva" value="1" min="1"
+                                        max="15" />
+                                </div>
+                                <div class="grupo-campo" id="wrap-monto-apuesta" style="display: none;">
+                                    <label for="evento-monto-apuesta">Monto de la apuesta (COP)</label>
+                                    <input type="number" id="evento-monto-apuesta" class="input-reserva"
+                                        placeholder="Ej: 50000" />
+                                </div>
+                                <div class="grupo-campo">
+                                    <label for="evento-fecha-hora">Fecha y hora del partido</label>
+                                    <div class="input-fecha-group">
+                                        <input type="datetime-local" id="evento-fecha-hora" class="input-reserva" />
+                                        <button type="button" id="btn-cerrar-fecha" class="btn-chulo-fecha"
+                                            title="Confirmar fecha" aria-label="Confirmar fecha">
+                                            <svg class="icon">
+                                                <use href="#i-check" />
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div id="seccion-campos-torneo" style="display: none;">
+                                <div class="grupo-campo">
+                                    <label for="evento-titulo">Nombre del torneo</label>
+                                    <input type="text" id="evento-titulo" class="input-reserva"
+                                        placeholder="Ej: Torneo Relámpago Sabaneta 2026" />
+                                </div>
+                                <div class="grupo-campo">
+                                    <label for="evento-inscripcion">Tipo de inscripción</label>
+                                    <select id="evento-inscripcion" class="input-reserva">
+                                        <option value="Inscripción Abierta">Inscripción Abierta</option>
+                                        <option value="Inscripción Cerrada">Inscripción Cerrada</option>
+                                    </select>
+                                </div>
+                                <div class="grupo-campo">
+                                    <label for="evento-cupos">Cupos o equipos disponibles</label>
+                                    <input type="number" id="evento-cupos" class="input-reserva"
+                                        placeholder="Ej: 12 equipos" min="2" max="32" />
+                                </div>
+                                <div class="grupo-campo">
+                                    <label><input type="checkbox" id="evento-check-costo"> ¿Tiene costo de
+                                        inscripción?</label>
+                                </div>
+                                <div class="grupo-campo" id="wrap-costo-inscripcion" style="display: none;">
+                                    <label for="evento-costo-inscripcion">Valor por equipo (COP)</label>
+                                    <input type="number" id="evento-costo-inscripcion" class="input-reserva"
+                                        placeholder="Ej: 100000" />
+                                </div>
+                                <div class="grupo-campo">
+                                    <label><input type="checkbox" id="evento-check-premio"> ¿Tiene premios en efectivo o
+                                        especie?</label>
+                                </div>
+                                <div class="grupo-campo" id="wrap-valor-premio" style="display: none;">
+                                    <label for="evento-valor-premio">Detalle del premio</label>
+                                    <input type="text" id="evento-valor-premio" class="input-reserva"
+                                        placeholder="Ej: $800.000 + Trofeo" />
+                                </div>
+                                <div class="form-row">
+                                    <div class="grupo-campo">
+                                        <label for="evento-fecha-inicio">Fecha de inicio</label>
+                                        <input type="date" id="evento-fecha-inicio" class="input-reserva" />
+                                    </div>
+                                    <div class="grupo-campo">
+                                        <label for="evento-fecha-fin">Fecha de cierre</label>
+                                        <input type="date" id="evento-fecha-fin" class="input-reserva" />
+                                    </div>
+                                </div>
+                                <div class="grupo-campo">
+                                    <label for="evento-banner-file">Banner promocional del torneo</label>
+                                    <input type="file" id="evento-banner-file" class="input-reserva" accept="image/*" />
+                                </div>
+                            </div>
+
+                            <div class="grupo-campo">
+                                <label for="evento-contacto">Contacto (teléfono o nombre del organizador)</label>
+                                <input type="text" id="evento-contacto" class="input-reserva"
+                                    placeholder="Ej: Carlos - 3001234567" required />
+                            </div>
+
+                            <div class="grupo-campo">
+                                <label for="evento-descripcion">Descripción, detalles u horarios</label>
+                                <textarea id="evento-descripcion" class="input-reserva" rows="3"
+                                    placeholder="Ej: Se juega todos los jueves a las 8:00 PM..."></textarea>
+                            </div>
+
+                            <button type="submit" id="btn-enviar-evento" class="btn btn--primary btn--block">
+                                <svg class="icon">
+                                    <use href="#i-check" />
+                                </svg>
+                                Guardar y publicar
+                            </button>
+                            <p id="mensaje-crear-evento" class="form-mensaje"></p>
+                        </form>
+
+                        <div id="lista-eventos-cancha" class="scroll-box">
+                            <p class="modal-subtexto">Cargando eventos y torneos...</p>
+                        </div>
+                    </div>
+
+                    <hr class="modal-divider">
+
+                    <!-- Calificación -->
+                    <h4 class="drawer__h">Calificación de la cancha</h4>
+                    <div id="contenedor-estrellas-promedio" class="rating-summary">
+                        <span id="promedio-estrellas-texto">★ 0.0 (0 opiniones)</span>
+                    </div>
+
+                    <div id="lista-calificaciones" class="scroll-box scroll-box--sm"></div>
+
+                    <form id="form-calificacion" class="panel-form">
+                        <div class="rating-input">
+                            <span class="rating-input__label">Tu puntuación</span>
+                            <div id="selector-estrellas-input">
+                                <span data-value="1">★</span><span data-value="2">★</span><span
+                                    data-value="3">★</span><span data-value="4">★</span><span data-value="5">★</span>
+                            </div>
+                            <input type="hidden" id="input-puntuacion-valor" value="5" />
+                        </div>
+                        <input type="text" id="input-contacto-calificacion" class="input-reserva"
+                            placeholder="Tu nombre o contacto" aria-label="Tu nombre o contacto" required />
+                        <textarea id="input-comentario-calificacion" class="input-reserva" rows="2"
+                            placeholder="Cuenta cómo está la cancha: piso, iluminación, seguridad..."
+                            aria-label="Comentario"></textarea>
+                        <button type="submit" id="btn-enviar-calificacion" class="btn btn--primary btn--block">Enviar
+                            calificación</button>
+                        <p id="mensaje-calificacion" class="form-mensaje"></p>
+                    </form>
+
+                    <hr class="modal-divider">
+
+                    <!-- Reportes y evidencias -->
+                    <h4 class="drawer__h">Reportes y evidencias</h4>
+                    <div id="lista-evidencias"></div>
+
+                    <form id="form-evidencia" class="form-evidencia panel-form">
+                        <input type="file" id="input-foto-evidencia" accept="image/*" aria-label="Foto de evidencia"
+                            required>
+                        <textarea id="input-descripcion-evidencia" class="input-reserva"
+                            placeholder="Describe el estado actual de la cancha..." rows="2"></textarea>
+                        <button type="submit" id="btn-subir-evidencia" class="btn btn--primary btn--block">Subir
+                            evidencia</button>
+                    </form>
+                    <p id="mensaje-evidencia" class="form-mensaje"></p>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <!-- ============ PANEL DE ADMINISTRACIÓN ============ -->
+    <div id="admin-modal-overlay" class="modal-overlay oculto">
+        <div class="modal-content modal-content--lg" role="dialog" aria-modal="true" aria-labelledby="admin-titulo">
+            <button id="admin-modal-cerrar" type="button" class="modal-cerrar" aria-label="Cerrar">
+                <svg class="icon">
+                    <use href="#i-x" />
+                </svg>
+            </button>
+            <h3 id="admin-titulo" class="modal-titulo">Panel de administración</h3>
+            <p class="modal-subtexto">Gestión de escenarios, canchas y moderación de eventos.</p>
+
+            <div class="tabs tabs--admin">
+                <button id="tab-btn-canchas" type="button" class="tab is-active">Canchas</button>
+                <button id="tab-btn-eventos" type="button" class="tab">Torneos y eventos</button>
+                <button id="tab-btn-roles" type="button" class="tab">Permisos</button>
+            </div>
+
+            <!-- Sección 1: canchas -->
+            <div id="admin-seccion-canchas">
+                <h4 class="admin-h">Registrar nueva cancha</h4>
+                <form id="form-crear-cancha-admin" class="panel-form">
+                    <div class="grupo-campo">
+                        <label for="admin-cancha-nombre">Nombre de la cancha</label>
+                        <input type="text" id="admin-cancha-nombre" class="input-reserva"
+                            placeholder="Ej: Cancha Sintética El Dorado" required />
+                    </div>
+                    <div class="form-row">
+                        <div class="grupo-campo">
+                            <label for="admin-cancha-surface">Superficie</label>
+                            <select id="admin-cancha-surface" class="input-reserva">
+                                <option value="artificial_turf">Sintética / Grama Artificial</option>
+                                <option value="grass">Grama Natural</option>
+                                <option value="concrete">Concreto / Pavimentada</option>
+                                <option value="asphalt">Asfalto</option>
+                            </select>
+                        </div>
+                        <div class="grupo-campo">
+                            <label for="admin-cancha-barrio">ID del barrio (opcional)</label>
+                            <input type="number" id="admin-cancha-barrio" class="input-reserva" placeholder="Ej: 1" />
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="grupo-campo">
+                            <label for="admin-cancha-lat">Latitud</label>
+                            <input type="text" id="admin-cancha-lat" class="input-reserva" placeholder="Ej: 6.15150"
+                                required />
+                        </div>
+                        <div class="grupo-campo">
+                            <label for="admin-cancha-lng">Longitud</label>
+                            <input type="text" id="admin-cancha-lng" class="input-reserva" placeholder="Ej: -75.61660"
+                                required />
+                        </div>
+                    </div>
+                    <div class="grupo-campo">
+                        <label for="admin-cancha-imagen">URL de imagen (opcional)</label>
+                        <input type="url" id="admin-cancha-imagen" class="input-reserva" placeholder="https://..." />
+                    </div>
+                    <button type="submit" class="btn btn--primary btn--block">Guardar nueva cancha</button>
+                    <p id="mensaje-admin-cancha" class="form-mensaje"></p>
+                </form>
+
+                <h4 class="admin-h">Listado y estado de canchas</h4>
+                <div id="admin-lista-canchas" class="scroll-box scroll-box--sm">
+                    <p class="modal-subtexto">Cargando canchas...</p>
+                </div>
+
+                <div class="panel-form">
+                    <h4 class="admin-h">Auditoría de desgaste y concurrencia</h4>
+                    <p class="modal-subtexto">Registros generados automáticamente por PostGIS en cada inscripción a
+                        eventos.</p>
+                    <button type="button" onclick="mapApp.cargarAlertasDesgasteAdmin()"
+                        class="btn btn--secondary btn--sm">
+                        <svg class="icon">
+                            <use href="#i-refresh" />
+                        </svg>
+                        Consultar alertas de desgaste
+                    </button>
+                    <div id="lista-alertas-desgaste" class="scroll-box scroll-box--sm">
+                        <p class="modal-subtexto">Pulsa el botón para cargar las alertas recientes.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sección 2: moderación -->
+            <div id="admin-seccion-eventos" class="oculto">
+                <h4 class="admin-h">Moderación de torneos y desafíos activos</h4>
+                <p class="modal-subtexto">Elimina eventos que incumplan las normas o presenten fraudes.</p>
+                <div id="admin-lista-eventos" class="scroll-box">
+                    <p class="modal-subtexto">Cargando eventos globales...</p>
+                </div>
+            </div>
+
+            <!-- Sección 3: roles -->
+            <div id="admin-seccion-roles" class="oculto">
+                <h4 class="admin-h">Permisos y administradores</h4>
+                <p class="modal-subtexto">Cambia el rol de los usuarios registrados entre administrador y usuario
+                    estándar.</p>
+                <div id="admin-lista-usuarios" class="scroll-box">
+                    <p class="modal-subtexto">Cargando cuentas de usuarios...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.js"></script>
+
+    <!-- Gestor de capas ArcGIS: debe cargarse antes de app.js -->
+    <script src="layers/ArcGISServiceManager.js"></script>
+
+    <!-- Archivo principal de lógica -->
+    <script src="app.js"></script>
+</body>
+
+</html>
