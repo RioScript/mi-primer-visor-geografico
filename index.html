@@ -247,6 +247,7 @@
         <nav class="main-nav" aria-label="Navegación principal">
             <a href="#mapa" class="nav-link active" data-section="mapa">Mapa</a>
             <a href="#canchas" class="nav-link" data-section="canchas">Canchas</a>
+            <a href="#eventos" class="nav-link" data-section="eventos">Eventos</a>
             <a href="#mapa" class="nav-link" data-open="capas">Capas GIS</a>
             <a href="#app-footer" class="nav-link" data-section="app-footer">Proyecto</a>
         </nav>
@@ -456,6 +457,30 @@
                 <p class="cargando-texto">Cargando canchas...</p>
             </div>
         </section>
+
+        <!-- ============ SECCIÓN DE EVENTOS Y TORNEOS ============ -->
+        <section id="eventos" class="section">
+            <div class="section__head">
+                <div>
+                    <h2>Eventos y Torneos en Sabaneta</h2>
+                    <p>Encuentra partidos recreativos, retos apostados y torneos barriales organizados por la comunidad.</p>
+                </div>
+                <span class="count-pill"><b id="contador-total-eventos">0</b> activos</span>
+            </div>
+
+            <div class="searchbar" role="search" style="margin-bottom: 1.5rem;">
+                <svg class="icon searchbar__icon">
+                    <use href="#i-search" />
+                </svg>
+                <input type="search" id="buscador-eventos" class="input-filtro"
+                    placeholder="Buscar evento por nombre, tipo o contacto" aria-label="Buscar evento"
+                    autocomplete="off">
+            </div>
+
+            <div id="contenedor-lista-eventos-global" class="lista-canchas">
+                <p class="cargando-texto">Cargando eventos y torneos...</p>
+            </div>
+        </section>
     </main>
 
     <!-- ============ PIE DE PÁGINA ============ -->
@@ -478,6 +503,7 @@
                 <nav class="footer-links" aria-label="Atajos">
                     <a href="#mapa">Ir al mapa</a>
                     <a href="#canchas">Ver canchas</a>
+                    <a href="#eventos">Ver eventos</a>
                     <a href="#mapa" data-open="capas">Abrir capas</a>
                 </nav>
             </div>

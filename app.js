@@ -1,4 +1,4 @@
-// app.js - Visor Territorial e Inteligente de Canchas de Sabaneta (Con Filtro de Estrellas y Google Maps para Vehículo) Octubre 2026
+// app.js - Visor Territorial e Inteligente de Canchas de Sabaneta (Con Listado Global de Eventos) Octubre 2026
 
 class MapViewer {
     constructor(containerId) {
@@ -90,6 +90,8 @@ class MapViewer {
         this.initFiltrosEventosSidebar();
         this.initSelectModernoBarrio();
         this.initOrdenEstrellas(); // Inicializar el listener del filtro de estrellas
+        this.initBuscadorEventosGlobal(); // Inicializar buscador de la sección de eventos
+
         this.cargarCanchas();
         this.cargarEventosGlobales();
         this.cargarLimiteSabaneta();
@@ -583,7 +585,7 @@ class MapViewer {
         if (btnLimpiar) btnLimpiar.addEventListener('click', () => this.limpiarFiltros());
 
         // Resaltar en el menú la sección que se está viendo
-        const secciones = ['mapa', 'canchas', 'app-footer'].map(id => document.getElementById(id)).filter(Boolean);
+        const secciones = ['mapa', 'canchas', 'eventos', 'app-footer'].map(id => document.getElementById(id)).filter(Boolean);
         const enlaces = document.querySelectorAll('.main-nav .nav-link[data-section]');
         const marcarSeccion = () => {
             const y = window.scrollY + 140;
@@ -711,7 +713,78 @@ class MapViewer {
         const { data, error } = await this.supabase.from('eventos').select('*');
         if (!error && data) {
             this.datosEventos = data.filter(ev => this.esEventoActivo(ev));
+            this.renderizarListaEventosGlobal(this.datosEventos);
         }
+    }
+
+    initBuscadorEventosGlobal() {
+        const input = document.getElementById('buscador-eventos');
+        if (!input) return;
+        input.addEventListener('input', () => {
+            const texto = input.value.toLowerCase();
+            const filtrados = this.datosEventos.filter(ev => {
+                const tipo = (ev.tipo_evento || '').toLowerCase();
+                const titulo = (ev.titulo || '').toLowerCase();
+                const contacto = (ev.contacto || '').toLowerCase();
+                const desc = (ev.descripcion || '').toLowerCase();
+                return tipo.includes(texto) || titulo.includes(texto) || contacto.includes(texto) || desc.includes(texto);
+            });
+            this.renderizarListaEventosGlobal(filtrados);
+        });
+    }
+
+    renderizarListaEventosGlobal(eventos) {
+        const contenedor = document.getElementById('contenedor-lista-eventos-global');
+        const contador = document.getElementById('contador-total-eventos');
+        if (!contenedor) return;
+
+        contenedor.innerHTML = '';
+        if (contador) contador.innerText = eventos.length;
+
+        if (!eventos || eventos.length === 0) {
+            contenedor.innerHTML = '<p class="cargando-texto">No hay eventos o torneos que coincidan con la búsqueda.</p>';
+            return;
+        }
+
+        const tabla = document.createElement('table');
+        tabla.className = 'tabla-canchas';
+        tabla.innerHTML = `
+            <thead><tr>
+                <th scope="col">Evento / Torneo</th>
+                <th scope="col">Cancha Asociada</th>
+                <th scope="col">Organizador</th>
+                <th scope="col">Detalles</th>
+                <th scope="col" class="col-acciones"><span class="visualmente-oculto">Acciones</span></th>
+            </tr></thead><tbody></tbody>`;
+        const cuerpo = tabla.querySelector('tbody');
+
+        eventos.forEach(ev => {
+            const canchaObj = this.datosCanchas.find(c => c.id === ev.cancha_id);
+            const nombreCancha = this.escaparHtml(canchaObj?.nombre || 'Escenario deportivo');
+            const titulo = this.escaparHtml(ev.tipo_evento === 'Torneo' ? (ev.titulo || 'Torneo') : ev.tipo_evento);
+            const icono = ev.tipo_evento === 'Torneo' ? '#i-trophy' : '#i-users';
+
+            const fila = document.createElement('tr');
+            fila.className = 'item-cancha-lista';
+            fila.innerHTML = `
+                <td data-label="Evento"><span class="celda-evento"><svg class="icon"><use href="${icono}"/></svg><strong>${titulo}</strong></span></td>
+                <td data-label="Cancha">${nombreCancha}</td>
+                <td data-label="Organizador">${this.escaparHtml(ev.contacto)}</td>
+                <td data-label="Detalles"><small>${this.escaparHtml(ev.descripcion || 'Sin detalles adicionales')}</small></td>
+                <td class="col-acciones"><button type="button" class="btn btn--secondary btn--sm">Ver en mapa</button></td>
+            `;
+            fila.addEventListener('click', () => {
+                if (canchaObj) {
+                    this.enfocarCancha(canchaObj, true);
+                }
+            });
+            cuerpo.appendChild(fila);
+        });
+
+        const envoltorio = document.createElement('div');
+        envoltorio.className = 'tabla-wrap';
+        envoltorio.appendChild(tabla);
+        contenedor.appendChild(envoltorio);
     }
 
     aplicarFiltrosGlobales() {
@@ -2034,9 +2107,19 @@ class MapViewer {
 
                 const bannerFile = document.getElementById('evento-banner-file').files[0];
                 if (bannerFile) {
+                    // 💡 RUTA CORREGIDA: Sin repetir el nombre del bucket al inicio para evitar el error NoSuchKey
                     const filePath = `eventos_banners/${Date.now()}_${bannerFile.name}`;
-                    await this.supabase.storage.from('evidencias').upload(filePath, bannerFile);
-                    const { data: publicUrlData } = this.supabase.storage.from('evidencias').getPublicUrl(filePath);
+                    
+                    const { error: uploadError } = await this.supabase.storage
+                        .from('evidencias')
+                        .upload(filePath, bannerFile);
+
+                    if (uploadError) throw uploadError;
+
+                    const { data: publicUrlData } = this.supabase.storage
+                        .from('evidencias')
+                        .getPublicUrl(filePath);
+                    
                     datosInsert.banner_url = publicUrlData.publicUrl;
                 }
             } else {
