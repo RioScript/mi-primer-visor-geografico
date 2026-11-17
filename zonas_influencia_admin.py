@@ -1,15 +1,38 @@
 import json
 import os
-import requests
 from osgeo import ogr, osr
+import requests
 
 # --- CONFIGURACIÓN DE SUPABASE ---
 SUPABASE_URL = "https://vdltyryvmphxdcxjrgsf.supabase.co"
-SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZkbHR5cnl2bXBoeGRjeGpyZ3NmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc3NTU5NTgsImV4cCI6MjEwMzMzMTk1OH0.vxqi58vWcfbWqoRTs9-AhalTOJS5rkOGQKbGrCOb9WA"
+SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZkbHR5cnl2bXBoeGRjeGpyZ3NmIiwicm9sZSI6InFub24iLCJpYXQiOjE3ODc3NTU5NTgsImV4cCI6MjEwMzMzMTk1OH0.vxqi58vWcfbWqoRTs9-AhalTOJS5rkOGQKbGrCOb9WA"
 HEADERS = {"apikey": SUPABASE_KEY, "Authorization": f"Bearer {SUPABASE_KEY}"}
 
 # ==========================================
-# FUNCIONES AYUDANTES (Las que te faltaban)
+# FUNCIÓN DE SUBIDA AUTOMÁTICA A SUPABASE STORAGE
+# ==========================================
+def subir_a_supabase_storage(nombre_archivo):
+    url_upload = f"{SUPABASE_URL}/storage/v1/object/evidencias/{nombre_archivo}"
+    headers = {
+        "apikey": SUPABASE_KEY,
+        "Authorization": f"Bearer {SUPABASE_KEY}",
+        "Content-Type": "application/geo+json",
+        "x-upsert": "true"  # Permite sobrescribir el archivo existente en Supabase Storage
+    }
+
+    try:
+        with open(nombre_archivo, "rb") as f:
+            res = requests.put(url_upload, headers=headers, data=f)
+            
+            if res.status_code in [200, 201]:
+                print(f"🚀 ¡{nombre_archivo} subido y actualizado con éxito en Supabase Storage!")
+            else:
+                print(f"❌ Error al subir {nombre_archivo} (Código {res.status_code}):", res.text)
+    except Exception as e:
+        print(f"❌ Excepción crítica al sincronizar con Supabase: {e}")
+
+# ==========================================
+# FUNCIONES AYUDANTES
 # ==========================================
 def obtener_datos_supabase():
     """Descarga las canchas, calificaciones y eventos desde la API de Supabase"""
@@ -42,18 +65,12 @@ def obtener_lat_lng(geom):
 # FUNCIÓN 1: ZONAS DE INFLUENCIA (BUFFERS)
 # ==========================================
 def generar_zonas_influencia_admin():
-    """
-    Crea polígonos (Buffers) alrededor de las canchas dependiendo de 
-    cuántas personas (jugadores) están yendo a los eventos.
-    """
     print("⚙️ Generando Zonas de Influencia (Buffers) para Administradores...")
     canchas, calificaciones, eventos = obtener_datos_supabase()
     
-    # 1. Obtener los participantes
     res_participantes = requests.get(f"{SUPABASE_URL}/rest/v1/participantes_evento?select=*", headers=HEADERS)
     participantes = res_participantes.json() if res_participantes.status_code == 200 else []
 
-    # 2. Contar participantes por evento y luego por cancha
     personas_por_evento = {}
     for p in participantes:
         ev_id = p["evento_id"]
@@ -65,18 +82,15 @@ def generar_zonas_influencia_admin():
         ev_id = ev["id"]
         personas_por_cancha[c_id] = personas_por_cancha.get(c_id, 0) + personas_por_evento.get(ev_id, 0)
 
-    # 3. Configurar GDAL y los Sistemas de Referencia (CRS)
     driver = ogr.GetDriverByName("GeoJSON")
     output_filename = "zonas_influencia_admin.geojson"
     if os.path.exists(output_filename):
         driver.DeleteDataSource(output_filename)
 
-    # WGS84 (Lat/Lng) - Para el GeoJSON
     source_sr = osr.SpatialReference()
     source_sr.ImportFromEPSG(4326)
     source_sr.SetAxisMappingStrategy(osr.OAMS_TRADITIONAL_GIS_ORDER)
     
-    # Web Mercator (Metros) - Para hacer el Buffer en metros
     target_sr = osr.SpatialReference()
     target_sr.ImportFromEPSG(3857)
     target_sr.SetAxisMappingStrategy(osr.OAMS_TRADITIONAL_GIS_ORDER)
@@ -89,7 +103,7 @@ def generar_zonas_influencia_admin():
     
     layer.CreateField(ogr.FieldDefn("cancha_id", ogr.OFTInteger))
     layer.CreateField(ogr.FieldDefn("nombre", ogr.OFTString))
-    layer.CreateField(ogr.FieldDefn("total_eventos", ogr.OFTInteger)) # Usamos esta variable en app.js
+    layer.CreateField(ogr.FieldDefn("total_eventos", ogr.OFTInteger))
     layer.CreateField(ogr.FieldDefn("prioridad_inversion", ogr.OFTString))
     layer.CreateField(ogr.FieldDefn("radio_buffer_m", ogr.OFTReal))
 
@@ -99,11 +113,9 @@ def generar_zonas_influencia_admin():
         c_id = c["id"]
         total_personas = personas_por_cancha.get(c_id, 0)
         
-        # Contamos cuántos eventos tiene esta cancha en específico
         eventos_de_cancha = [e for e in eventos if e["cancha_id"] == c_id]
         num_eventos = len(eventos_de_cancha)
         
-        # Lógica de negocio (Niveles de inversión)
         if total_personas >= 20 or num_eventos >= 5:
             nivel = "ALTA_INVERSION"
         elif total_personas >= 5 or num_eventos >= 2:
@@ -117,9 +129,8 @@ def generar_zonas_influencia_admin():
             point = ogr.Geometry(ogr.wkbPoint)
             point.AddPoint(lng, lat)
             
-            # EL TRUCO GIS: Proyectar a metros, hacer buffer, volver a grados
             point.Transform(transform_to_meters)
-            radio_metros = max(total_personas * 3, 25) # Mínimo 25 metros
+            radio_metros = max(total_personas * 3, 25)
             buffer_geom = point.Buffer(radio_metros)
             buffer_geom.Transform(transform_to_latlng)
 
@@ -136,13 +147,15 @@ def generar_zonas_influencia_admin():
 
     data_source = None
     print(f"✅ Buffers de Administrador exportados: {output_filename}")
+    
+    # 🚀 Subir automáticamente a Supabase Storage
+    subir_a_supabase_storage(output_filename)
 
 
 # ==========================================
 # FUNCIÓN 2: TORNEOS ACTIVOS
 # ==========================================
 def generar_capa_torneos_activos():
-    """Filtra y exporta SOLO las canchas que tienen un Torneo activo."""
     print("⚙️ Generando capa de Torneos Activos...")
     canchas, _, eventos = obtener_datos_supabase()
 
@@ -192,6 +205,9 @@ def generar_capa_torneos_activos():
 
     data_source = None
     print(f"✅ Capa de torneos exportada: {output_filename}")
+    
+    # 🚀 Subir automáticamente a Supabase Storage
+    subir_a_supabase_storage(output_filename)
 
 
 # ==========================================

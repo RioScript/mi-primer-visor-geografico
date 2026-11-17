@@ -499,6 +499,17 @@ class MapViewer {
         }
 
         try {
+            // 1. Eliminar capas antiguas del mapa si existen para evitar duplicidad
+            if (this.capaGdalGroup) {
+                this.map.removeLayer(this.capaGdalGroup);
+                this.capaGdalGroup = null;
+            }
+            if (this.capaZonasInfluencia) {
+                this.map.removeLayer(this.capaZonasInfluencia);
+                this.capaZonasInfluencia = null;
+            }
+
+            // 2. Volver a cargar las capas aplicando anti-caché con timestamp
             await this.cargarZonasInfluenciaAdmin();
             await this.cargarCapaGdalProcesada();
             await this.cargarAlertasDesgasteAdmin();
@@ -1276,14 +1287,20 @@ class MapViewer {
 
         this.capaLimite = L.geoJSON(featureCollection, {
             style: {
-                color: '#ef4444',
-                weight: 4,
-                fillColor: '#f87171',
-                fillOpacity: 0.10
+                color: '#14201a',
+                weight: 2.5,
+                dashArray: '8 6',
+                fillOpacity: 0
             }
         }).addTo(this.map);
 
         this.capaLimite.bringToBack();
+
+        // 🟢 Líneas agregadas para el enfoque inicial y restricción de límites de Sabaneta
+        const limites = this.capaLimite.getBounds();
+        this.map.fitBounds(limites, { padding: [30, 30] });
+        this.map.setMaxBounds(limites.pad(0.6));
+        this.map.setMinZoom(13);
     }
 
     async cargarEstacionesMetroSupabase() {
@@ -1374,10 +1391,15 @@ class MapViewer {
 
     async cargarCapaGdalProcesada() {
         try {
-            const urlCapaGdal = "https://vdltyryvmphxdcxjrgsf.supabase.co/storage/v1/object/public/evidencias/canchas_analisis_gdal.geojson";
+            // 🟢 Agregado ?t= para evitar que el navegador use la versión en caché
+            const urlCapaGdal = `https://vdltyryvmphxdcxjrgsf.supabase.co/storage/v1/object/public/evidencias/canchas_analisis_gdal.geojson?t=${new Date().getTime()}`;
             const res = await fetch(urlCapaGdal);
             if (!res.ok) return;
             const geojson = await res.json();
+
+            if (this.capaGdalGroup) {
+                this.map.removeLayer(this.capaGdalGroup);
+            }
 
             this.capaGdalGroup = L.geoJSON(geojson, {
                 pointToLayer: (feature, latlng) => {
@@ -1404,13 +1426,15 @@ class MapViewer {
             }).addTo(this.map);
 
             const chkGdal = document.getElementById('toggle-gdal');
-            if (!chkGdal || chkGdal.checked) {
-                if (chkGdal) chkGdal.checked = true;
-            } else {
+            if (chkGdal && !chkGdal.checked) {
                 this.map.removeLayer(this.capaGdalGroup);
             }
 
-            if (this.layerControl) this.layerControl.addOverlay(this.capaGdalGroup, "📊 Análisis GDAL (Backend)");
+            if (this.layerControl) {
+                // Evita duplicar la capa en el control de capas de Leaflet
+                try { this.layerControl.removeLayer(this.capaGdalGroup); } catch(e){}
+                this.layerControl.addOverlay(this.capaGdalGroup, "📊 Análisis GDAL (Backend)");
+            }
         } catch (err) {
             console.error("Error al cargar la capa analítica GDAL:", err);
         }
@@ -1558,7 +1582,7 @@ class MapViewer {
         };
 
         this.capaVias = L.geoJSON(featureCollection, {
-            style: { color: '#f59e0b', weight: 2.5, opacity: 0.85 }
+            style: { color: '#7d867f', weight: 1.2, opacity: 0.55 }
         }).addTo(this.map);
 
         this.capaVias.bringToFront();
@@ -2642,6 +2666,10 @@ class MapViewer {
         alert(`✅ Rol actualizado a ${nuevoRol.toUpperCase()} con éxito.`);
         await this.cargarDatosAdminUsuarios();
     }
+}
+
+if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    document.querySelector('.intro-map')?.pauseAnimations();
 }
 
 // Carga principal al estar listo el DOM
