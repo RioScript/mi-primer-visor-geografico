@@ -1,14 +1,21 @@
 {
 "type": "FeatureCollection",
-"name": "canchas_enriquecidas_gdal",
+"name": "analisis",
 "crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:OGC:1.3:CRS84" } },
 "features": [
-{"type":"Feature","properties":{"cancha_id":3,"nombre":"Cancha Pan de Azúcar ","superficie":"grass","num_opiniones":0,"promedio_est":0.0,"num_eventos":0,"indice_uso":"Uso Estándar"},"geometry":{"type":"Point","coordinates":[-75.6309549,6.14143454,0.0]}},
-{"type":"Feature","properties":{"cancha_id":1,"nombre":"Cancha indesa","superficie":"grass","num_opiniones":0,"promedio_est":0.0,"num_eventos":1,"indice_uso":"Uso Estándar"},"geometry":{"type":"Point","coordinates":[-75.62145158,6.14934116,0.0]}},
-{"type":"Feature","properties":{"cancha_id":2,"nombre":"Cancha de Fútbol la 43a","superficie":"concrete","num_opiniones":0,"promedio_est":0.0,"num_eventos":1,"indice_uso":"Uso Estándar"},"geometry":{"type":"Point","coordinates":[-75.610338142105263,6.152511647368421,0.0]}},
-{"type":"Feature","properties":{"cancha_id":6,"nombre":"Cancha Sintetica La Doctora\r\n","superficie":"grass","num_opiniones":0,"promedio_est":0.0,"num_eventos":0,"indice_uso":"Uso Estándar"},"geometry":{"type":"Point","coordinates":[-75.59953156,6.14877584,0.0]}},
-{"type":"Feature","properties":{"cancha_id":7,"nombre":"Placa Microfútbol La Doctora\r\n","superficie":"concrete","num_opiniones":0,"promedio_est":0.0,"num_eventos":0,"indice_uso":"Uso Estándar"},"geometry":{"type":"Point","coordinates":[-75.60176092,6.15099634,0.0]}},
-{"type":"Feature","properties":{"cancha_id":4,"nombre":"Unidad Deportiva Zona Norte","superficie":"grass","num_opiniones":0,"promedio_est":0.0,"num_eventos":0,"indice_uso":"Uso Estándar"},"geometry":{"type":"Point","coordinates":[-75.61111396,6.1581057,0.0]}},
-{"type":"Feature","properties":{"cancha_id":5,"nombre":"Placa Polideportiva Villas del Carmen","superficie":"concrete","num_opiniones":0,"promedio_est":0.0,"num_eventos":0,"indice_uso":"Uso Estándar"},"geometry":{"type":"Point","coordinates":[-75.6058196,6.15486084,0.0]}}
+{"type":"Feature","properties":{"cancha_id":3,"nombre":"Cancha Pan de Azúcar ","promedio_est":0.0,"num_opiniones":0,"num_eventos":1,"indice_uso":"Bajo"},"geometry":{"type":"Point","coordinates":[-75.6309549,6.14143454,0.0]}},
+{"type":"Feature","properties":{"cancha_id":1,"nombre":"Cancha indesa","promedio_est":5.0,"num_opiniones":1,"num_eventos":4,"indice_uso":"Alto"},"geometry":{"type":"Point","coordinates":[-75.62145158,6.14934116,0.0]}},
+{"type":"Feature","properties":{"cancha_id":6,"nombre":"Cancha De Futbol Maria Auxiliadora\r\n\r\n","promedio_est":0.0,"num_opiniones":0,"num_eventos":0,"indice_uso":"Bajo"},"geometry":{"type":"Point","coordinates":[-75.59953156,6.14877584,0.0]}},
+{"type":"Feature","properties":{"cancha_id":2,"nombre":"Cancha de Fútbol la 43a","promedio_est":0.0,"num_opiniones":0,"num_eventos":1,"indice_uso":"Bajo"},"geometry":{"type":"Point","coordinates":[-75.61128,6.15345,0.0]}},
+{"type":"Feature","properties":{"cancha_id":4,"nombre":"Unidad Deportiva Zona Norte","promedio_est":0.0,"num_opiniones":0,"num_eventos":0,"indice_uso":"Bajo"},"geometry":{"type":"Point","coordinates":[-75.61111396,6.1581057,0.0]}},
+{"type":"Feature","properties":{"cancha_id":5,"nombre":"Placa Polideportiva Villas del Carmen","promedio_est":0.0,"num_opiniones":0,"num_eventos":2,"indice_uso":"Medio"},"geometry":{"type":"Point","coordinates":[-75.6058196,6.15486084,0.0]}},
+{"type":"Feature","properties":{"cancha_id":29,"nombre":"Cancha Sintetica La Doctora","promedio_est":0.0,"num_opiniones":0,"num_eventos":0,"indice_uso":"Bajo"},"geometry":{"type":"Point","coordinates":[-75.61334,6.14129,0.0]}},
+{"type":"Feature","properties":{"cancha_id":31,"nombre":"Cancha Los Colores Prados de Sabaneta","promedio_est":0.0,"num_opiniones":0,"num_eventos":0,"indice_uso":"Bajo"},"geometry":{"type":"Point","coordinates":[-75.62283,6.14798,0.0]}},
+{"type":"Feature","properties":{"cancha_id":28,"nombre":"Placa Microfútbol La Doctora","promedio_est":0.0,"num_opiniones":0,"num_eventos":0,"indice_uso":"Bajo"},"geometry":{"type":"Point","coordinates":[-75.61528,6.14266,0.0]}},
+{"type":"Feature","properties":{"cancha_id":35,"nombre":"CANCHA ENTREAMIGOS","promedio_est":0.0,"num_opiniones":0,"num_eventos":0,"indice_uso":"Bajo"},"geometry":{"type":"Point","coordinates":[-75.61829,6.15248,0.0]}},
+{"type":"Feature","properties":{"cancha_id":30,"nombre":"Cancha microfútbol y Baloncesto Asociación Comunal Las Lomitas","promedio_est":0.0,"num_opiniones":0,"num_eventos":0,"indice_uso":"Bajo"},"geometry":{"type":"Point","coordinates":[-75.60142,6.14314,0.0]}},
+{"type":"Feature","properties":{"cancha_id":37,"nombre":"Cancha La Barquereña","promedio_est":0.0,"num_opiniones":0,"num_eventos":0,"indice_uso":"Bajo"},"geometry":{"type":"Point","coordinates":[-75.61337,6.15063,0.0]}},
+{"type":"Feature","properties":{"cancha_id":34,"nombre":"CANCHA CAÑAVERALEJO","promedio_est":0.0,"num_opiniones":0,"num_eventos":0,"indice_uso":"Bajo"},"geometry":{"type":"Point","coordinates":[-75.62112,6.14015,0.0]}},
+{"type":"Feature","properties":{"cancha_id":36,"nombre":"Cancha Las Vegas","promedio_est":0.0,"num_opiniones":0,"num_eventos":0,"indice_uso":"Bajo"},"geometry":{"type":"Point","coordinates":[-75.61181,6.15545,0.0]}}
 ]
 }

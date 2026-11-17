@@ -42,6 +42,7 @@ class MapViewer {
         this.initIntro();
         this.canchaSeleccionadaId = null;
         this.datosCanchas = [];
+        this.listaBarrios = [];
         this.datosParaderos = [];
         this.datosEventos = [];
         this.capaMarcadoresZoom = null;
@@ -49,6 +50,7 @@ class MapViewer {
         this.capaRuta = null;
         this.marcadoresRuta = [];
         this.barrioSeleccionadoValor = '';
+        this._canchaAdminEditando = null;
 
         // Variables de estado para capas
         this.modoEnfoqueActivo = false;
@@ -470,61 +472,319 @@ class MapViewer {
                 this.cargarZonasInfluenciaAdmin();
             }
 
-            const adminModalBody = document.querySelector('#admin-modal-overlay .modal-content') || document.querySelector('.admin-content');
-            if (adminModalBody && !document.getElementById('btn-recalcular-gdal')) {
+            // La tarjeta del motor GIS vive en la pestaña "Análisis GIS" del panel
+            const slotGis = document.getElementById('admin-gis-slot');
+            if (slotGis && !document.getElementById('btn-recalcular-gdal')) {
                 const btnGdalContainer = document.createElement('div');
-                btnGdalContainer.className = 'admin-card';
+                btnGdalContainer.className = 'admin-card admin-card--gis';
                 btnGdalContainer.innerHTML = `
-                    <p>Motor analítico espacial (GDAL / PostGIS)</p>
-                    <button id="btn-recalcular-gdal" type="button" onclick="window.mapApp.recalcularAnalisisGdal()" class="btn btn--secondary btn--block">
-                        <svg class="icon"><use href="#i-refresh"/></svg>
-                        Recalcular análisis GIS (GDAL)
-                    </button>
+                    <div class="gis-card__radar" aria-hidden="true"><i></i><i></i><i></i></div>
+                    <div class="gis-card__cuerpo">
+                        <span class="gis-card__etiqueta">Centro de análisis espacial · PostGIS</span>
+                        <h4 class="gis-card__titulo">Zonas de influencia de las canchas</h4>
+                        <p class="gis-card__txt">Cada vez que agregues, edites o elimines canchas, recalcula para actualizar los buffers y el análisis en el mapa.</p>
+                        <ul class="gis-leyenda">
+                            <li><i style="--c:#dc2626"></i>Alta inversión</li>
+                            <li><i style="--c:#f59e0b"></i>Mantenimiento</li>
+                            <li><i style="--c:#3b82f6"></i>Zona tranquila</li>
+                            <li><i style="--c:#a855f7"></i>Punto de análisis</li>
+                        </ul>
+                        <button id="btn-recalcular-gdal" type="button" onclick="window.mapApp.recalcularAnalisisGdal()" class="btn btn--gis btn--block">
+                            <svg class="icon"><use href="#i-refresh"/></svg>
+                            Recalcular análisis GIS
+                        </button>
+                        <small id="gis-ultima-act" class="gis-card__sello">Mide uso, calificaciones y eventos de cada cancha</small>
+                    </div>
                 `;
-                const tituloAdmin = adminModalBody.querySelector('.tabs');
-                if (tituloAdmin) {
-                    adminModalBody.insertBefore(btnGdalContainer, tituloAdmin);
-                } else {
-                    adminModalBody.appendChild(btnGdalContainer);
-                }
+                slotGis.appendChild(btnGdalContainer);
             }
         }
     }
 
+    // ------------------------------------------------------------------
+    // ANÁLISIS ESPACIAL (reemplaza al script de Python/GDAL)
+    // Lee canchas, eventos, participantes y calificaciones de Supabase,
+    // calcula buffers y métricas, y sube los GeoJSON al bucket "evidencias".
+    // ------------------------------------------------------------------
+    crearBufferCirculo(lng, lat, radioM, pasos = 48) {
+        const R = 6378137;
+        const dLat = (radioM / R) * (180 / Math.PI);
+        const dLng = dLat / Math.cos(lat * Math.PI / 180);
+        const anillo = [];
+        for (let i = 0; i < pasos; i++) {
+            const a = (2 * Math.PI * i) / pasos;
+            anillo.push([+(lng + dLng * Math.cos(a)).toFixed(7), +(lat + dLat * Math.sin(a)).toFixed(7)]);
+        }
+        anillo.push(anillo[0]);
+        return { type: 'Polygon', coordinates: [anillo] };
+    }
+
+    async subirGeoJsonStorage(nombreArchivo, objeto) {
+        const blob = new Blob([JSON.stringify(objeto)], { type: 'application/geo+json' });
+        const { error } = await this.supabase.storage
+            .from('evidencias')
+            .upload(nombreArchivo, blob, { upsert: true, contentType: 'application/geo+json', cacheControl: '0' });
+        if (error) throw new Error(`No se pudo subir ${nombreArchivo}: ${error.message}`);
+    }
+
+    async generarYSubirAnalisisGis(onPaso = () => {}) {
+        onPaso(0);
+        const [rC, rCal, rEv, rPar] = await Promise.all([
+            this.supabase.from('canchas').select('*'),
+            this.supabase.from('calificaciones_cancha').select('cancha_id, puntuacion'),
+            this.supabase.from('eventos').select('id, cancha_id, tipo_evento'),
+            this.supabase.from('participantes_evento').select('evento_id')
+        ]);
+        const fallo = [rC, rCal, rEv, rPar].find(r => r.error);
+        if (fallo) throw new Error('Error leyendo datos: ' + fallo.error.message);
+
+        const canchas = rC.data || [], calificaciones = rCal.data || [];
+        const eventos = rEv.data || [], participantes = rPar.data || [];
+
+        const personasPorEvento = {};
+        participantes.forEach(p => { personasPorEvento[p.evento_id] = (personasPorEvento[p.evento_id] || 0) + 1; });
+
+        const personasPorCancha = {}, eventosPorCancha = {};
+        eventos.forEach(ev => {
+            personasPorCancha[ev.cancha_id] = (personasPorCancha[ev.cancha_id] || 0) + (personasPorEvento[ev.id] || 0);
+            eventosPorCancha[ev.cancha_id] = (eventosPorCancha[ev.cancha_id] || 0) + 1;
+        });
+
+        const califPorCancha = {};
+        calificaciones.forEach(c => {
+            const a = califPorCancha[c.cancha_id] || (califPorCancha[c.cancha_id] = { suma: 0, n: 0 });
+            a.suma += c.puntuacion; a.n += 1;
+        });
+
+        onPaso(1);
+        const zonas = [], analisis = [];
+        const resumen = { canchas: 0, alta: 0, mantenimiento: 0, tranquila: 0 };
+
+        canchas.forEach(c => {
+            const centro = this.obtenerCoordenadasGeom(c.geometry);
+            if (!centro || isNaN(centro.lat) || isNaN(centro.lng)) return;
+
+            const personas = personasPorCancha[c.id] || 0;
+            const nEventos = eventosPorCancha[c.id] || 0;
+
+            let nivel = 'ZONA_TRANQUILA', indice = 'Bajo';
+            if (personas >= 20 || nEventos >= 5) { nivel = 'ALTA_INVERSION'; indice = 'Alto'; resumen.alta++; }
+            else if (personas >= 5 || nEventos >= 2) { nivel = 'MANTENIMIENTO'; indice = 'Medio'; resumen.mantenimiento++; }
+            else resumen.tranquila++;
+            resumen.canchas++;
+
+            const radio = Math.max(personas * 3, 25);
+            zonas.push({
+                type: 'Feature',
+                properties: {
+                    cancha_id: c.id, nombre: c.nombre || 'Cancha', total_eventos: nEventos,
+                    prioridad_inversion: nivel, radio_buffer_m: radio
+                },
+                geometry: this.crearBufferCirculo(centro.lng, centro.lat, radio)
+            });
+
+            const cal = califPorCancha[c.id];
+            analisis.push({
+                type: 'Feature',
+                properties: {
+                    cancha_id: c.id, nombre: c.nombre || 'Cancha',
+                    promedio_est: cal ? +(cal.suma / cal.n).toFixed(1) : 0,
+                    num_opiniones: cal ? cal.n : 0, num_eventos: nEventos, indice_uso: indice
+                },
+                geometry: { type: 'Point', coordinates: [centro.lng, centro.lat] }
+            });
+        });
+
+        onPaso(2);
+        await this.subirGeoJsonStorage('zonas_influencia_admin.geojson', { type: 'FeatureCollection', features: zonas });
+        await this.subirGeoJsonStorage('canchas_analisis_gdal.geojson', { type: 'FeatureCollection', features: analisis });
+        return resumen;
+    }
+
+    // ------------------------------------------------------------------
+    // INTERFAZ TEMÁTICA: toasts, confirmación y pantalla de proceso GIS
+    // ------------------------------------------------------------------
+    toast(mensaje, tipo) {
+        let cont = document.getElementById('toast-stack');
+        if (!cont) {
+            cont = document.createElement('div');
+            cont.id = 'toast-stack';
+            cont.setAttribute('aria-live', 'polite');
+            document.body.appendChild(cont);
+        }
+        const texto = String(mensaje);
+        if (!tipo) tipo = /^\s*(❌|🚨)/.test(texto) ? 'error' : /^\s*⚠️/.test(texto) ? 'aviso' : 'ok';
+        const limpio = texto.replace(/^\s*(✅|❌|⚠️|🚨)\s*/, '');
+        const iconos = { ok: '#i-check', error: '#i-x', aviso: '#i-target' };
+
+        const t = document.createElement('div');
+        t.className = `toast toast--${tipo}`;
+        t.innerHTML = `<span class="toast__ico"><svg class="icon"><use href="${iconos[tipo]}"/></svg></span>
+                       <span class="toast__txt"></span><i class="toast__bar"></i>`;
+        t.querySelector('.toast__txt').textContent = limpio;
+        cont.appendChild(t);
+        const quitar = () => { t.classList.add('toast--sale'); setTimeout(() => t.remove(), 300); };
+        t.addEventListener('click', quitar);
+        setTimeout(quitar, 4200);
+    }
+
+    confirmar(titulo, texto, textoBoton = 'Confirmar') {
+        return new Promise(resolve => {
+            const ov = document.createElement('div');
+            ov.className = 'gis-modal';
+            ov.innerHTML = `
+                <div class="gis-modal__card gis-modal__card--peligro" role="alertdialog" aria-modal="true">
+                    <div class="gis-modal__tarjeta"><span></span></div>
+                    <h3></h3><p></p>
+                    <div class="gis-modal__acciones">
+                        <button type="button" class="btn btn--ghost" data-r="0">Cancelar</button>
+                        <button type="button" class="btn btn--peligro" data-r="1"></button>
+                    </div>
+                </div>`;
+            ov.querySelector('h3').textContent = titulo;
+            ov.querySelector('p').textContent = texto;
+            ov.querySelector('[data-r="1"]').textContent = textoBoton;
+            const cerrar = (r) => { ov.classList.add('gis-modal--sale'); setTimeout(() => ov.remove(), 220); resolve(r); };
+            ov.addEventListener('click', (e) => {
+                if (e.target === ov) return cerrar(false);
+                const b = e.target.closest('[data-r]');
+                if (b) cerrar(b.dataset.r === '1');
+            });
+            document.body.appendChild(ov);
+            ov.querySelector('[data-r="0"]').focus();
+        });
+    }
+
+    mostrarProcesoGis() {
+        const pasos = [
+            'Leyendo canchas, eventos y calificaciones',
+            'Calculando zonas de influencia (buffers)',
+            'Publicando capas en Supabase Storage',
+            'Actualizando el mapa'
+        ];
+        const ov = document.createElement('div');
+        ov.className = 'gis-proceso';
+        ov.innerHTML = `
+            <div class="gis-proceso__card" role="dialog" aria-modal="true" aria-live="polite">
+                <svg class="gis-escena" viewBox="0 0 320 150" aria-hidden="true">
+                    <g class="gis-escena__cancha" fill="none" stroke="rgba(255,255,255,.35)" stroke-width="1.5">
+                        <rect pathLength="1" x="20" y="12" width="280" height="126" rx="6"/>
+                        <path pathLength="1" d="M160 12V138"/><circle pathLength="1" cx="160" cy="75" r="22"/>
+                        <path pathLength="1" d="M20 45H62V105H20M300 45H258V105H300"/>
+                    </g>
+                    <g class="gis-escena__radar" fill="none" stroke="#34d399">
+                        <circle cx="160" cy="75" r="10"/><circle cx="160" cy="75" r="10"/><circle cx="160" cy="75" r="10"/>
+                    </g>
+                    <path class="gis-escena__ruta" fill="none" d="M40 118C90 40 130 120 160 75S240 20 282 52"/>
+                    <g class="gis-escena__balon"><circle r="9" fill="#fff"/><path d="M0-4 3.8-1.2 2.3 3.2H-2.3L-3.8-1.2Z" fill="#11261f"/></g>
+                </svg>
+                <h3 class="gis-proceso__titulo">Actualizando análisis espacial</h3>
+                <p class="gis-proceso__sub">Estamos recalculando las zonas de influencia de las canchas de Sabaneta.</p>
+                <ol class="gis-pasos">${pasos.map((p, i) => `<li data-i="${i}"><span class="gis-pasos__ico"></span><span>${p}</span></li>`).join('')}</ol>
+                <div class="gis-barra"><span></span></div>
+                <div class="gis-resultado" hidden></div>
+            </div>`;
+        document.body.appendChild(ov);
+
+        const items = [...ov.querySelectorAll('.gis-pasos li')];
+        const barra = ov.querySelector('.gis-barra span');
+        const titulo = ov.querySelector('.gis-proceso__titulo');
+        const sub = ov.querySelector('.gis-proceso__sub');
+        const res = ov.querySelector('.gis-resultado');
+        const cerrar = () => { ov.classList.add('gis-proceso--sale'); setTimeout(() => ov.remove(), 260); };
+
+        return {
+            paso: (i) => {
+                items.forEach((li, k) => {
+                    li.classList.toggle('is-done', k < i);
+                    li.classList.toggle('is-active', k === i);
+                });
+                barra.style.width = `${Math.round(((i + .4) / pasos.length) * 100)}%`;
+            },
+            ok: (r, alVer) => {
+                items.forEach(li => { li.classList.remove('is-active'); li.classList.add('is-done'); });
+                barra.style.width = '100%';
+                ov.classList.add('gis-proceso--ok');
+                titulo.textContent = '¡Análisis actualizado!';
+                sub.textContent = 'Las capas ya están publicadas y el mapa muestra los datos más recientes.';
+                const tarjetas = [
+                    ['Canchas analizadas', r.canchas, 'total'],
+                    ['Alta inversión', r.alta, 'alta'],
+                    ['Mantenimiento', r.mantenimiento, 'media'],
+                    ['Zona tranquila', r.tranquila, 'baja']
+                ];
+                res.innerHTML = `<div class="gis-kpis">${tarjetas.map(([l, v, c], i) =>
+                    `<div class="gis-kpi gis-kpi--${c}" style="--d:${i * 90}ms"><b data-n="${v}">0</b><span>${l}</span></div>`).join('')}</div>
+                    <div class="gis-resultado__acciones">
+                        <button type="button" class="btn btn--ghost" data-a="cerrar">Seguir en el panel</button>
+                        <button type="button" class="btn btn--primary" data-a="mapa">Ver en el mapa</button>
+                    </div>`;
+                res.hidden = false;
+                res.querySelectorAll('b[data-n]').forEach(b => {
+                    const fin = +b.dataset.n; const t0 = performance.now();
+                    const tick = (t) => {
+                        const p = Math.min((t - t0) / 700, 1);
+                        b.textContent = Math.round(fin * (1 - Math.pow(1 - p, 3)));
+                        if (p < 1) requestAnimationFrame(tick);
+                    };
+                    requestAnimationFrame(tick);
+                });
+                res.addEventListener('click', (e) => {
+                    const a = e.target.closest('[data-a]');
+                    if (!a) return;
+                    cerrar();
+                    if (a.dataset.a === 'mapa') alVer && alVer();
+                });
+            },
+            error: (msg) => {
+                ov.classList.add('gis-proceso--error');
+                titulo.textContent = 'No se pudo actualizar';
+                sub.textContent = msg;
+                res.innerHTML = `<div class="gis-resultado__acciones"><button type="button" class="btn btn--primary" data-a="cerrar">Entendido</button></div>`;
+                res.hidden = false;
+                res.addEventListener('click', (e) => { if (e.target.closest('[data-a]')) cerrar(); });
+            }
+        };
+    }
+
     async recalcularAnalisisGdal() {
         const btn = document.getElementById('btn-recalcular-gdal');
-        if (btn) {
-            btn.disabled = true;
-            btn.innerText = 'Ejecutando motor GDAL / buffers...';
-        }
+        if (btn) btn.disabled = true;
+        const ui = this.mostrarProcesoGis();
+        const pausa = (ms) => new Promise(r => setTimeout(r, ms));
 
         try {
-            // 1. Eliminar capas antiguas del mapa si existen para evitar duplicidad
-            if (this.capaGdalGroup) {
-                this.map.removeLayer(this.capaGdalGroup);
-                this.capaGdalGroup = null;
-            }
+            // 1-3. Calcular desde la base de datos y publicar en Storage
+            const resumen = await this.generarYSubirAnalisisGis((i) => ui.paso(i));
+            await pausa(350);
+
+            // 4. Refrescar capas del mapa con los datos nuevos
+            ui.paso(3);
+            if (this.capaGdalGroup) { this.map.removeLayer(this.capaGdalGroup); this.capaGdalGroup = null; }
             if (this.capaZonasInfluencia) {
                 this.map.removeLayer(this.capaZonasInfluencia);
+                try { this.layerControl && this.layerControl.removeLayer(this.capaZonasInfluencia); } catch (e) { }
                 this.capaZonasInfluencia = null;
             }
-
-            // 2. Volver a cargar las capas aplicando anti-caché con timestamp
             await this.cargarZonasInfluenciaAdmin();
             await this.cargarCapaGdalProcesada();
             await this.cargarAlertasDesgasteAdmin();
+            await pausa(450);
 
-            await new Promise(resolve => setTimeout(resolve, 800));
+            const ahora = new Date().toLocaleString('es-CO', { dateStyle: 'medium', timeStyle: 'short' });
+            const sello = document.getElementById('gis-ultima-act');
+            if (sello) sello.textContent = `Última actualización: ${ahora}`;
 
-            alert('✅ ¡Análisis espacial GDAL recalculado con éxito! Las zonas de influencia y los buffers se han actualizado en el mapa.');
+            ui.ok(resumen, () => {
+                const cerrarAdmin = document.getElementById('admin-modal-cerrar');
+                if (cerrarAdmin) cerrarAdmin.click();
+                if (this.map) document.getElementById('mapa')?.scrollIntoView({ behavior: 'smooth' });
+            });
         } catch (err) {
-            console.error("Error al recalcular GDAL:", err);
-            alert('❌ Ocurrió un error al ejecutar el re-análisis espacial.');
+            console.error("Error al recalcular análisis GIS:", err);
+            ui.error(err.message || String(err));
         } finally {
-            if (btn) {
-                btn.disabled = false;
-                btn.innerText = 'Recalcular análisis GIS (GDAL)';
-            }
+            if (btn) btn.disabled = false;
         }
     }
 
@@ -877,7 +1137,7 @@ class MapViewer {
                 if (canchaObj) {
                     this.enfocarCancha(canchaObj, true);
                 } else {
-                    alert("⚠️ No se encontró la cancha asociada a este evento en el visor.");
+                    window.mapApp.toast("⚠️ No se encontró la cancha asociada a este evento en el visor.");
                 }
             });
             cuerpo.appendChild(fila);
@@ -980,7 +1240,7 @@ class MapViewer {
                 if (canchaObj) {
                     this.enfocarCancha(canchaObj, true);
                 } else {
-                    alert("⚠️ No se encontró la cancha asociada a este evento en el visor.");
+                    window.mapApp.toast("⚠️ No se encontró la cancha asociada a este evento en el visor.");
                 }
             });
             cuerpo.appendChild(fila);
@@ -1034,6 +1294,9 @@ class MapViewer {
             return;
         }
 
+        // Lista de barrios disponible para el formulario de administración
+        this.listaBarrios = resBarrios.data || [];
+
         const mapaBarrios = new Map();
         if (resBarrios.data) {
             resBarrios.data.forEach(b => mapaBarrios.set(b.id, b.nombre));
@@ -1066,13 +1329,12 @@ class MapViewer {
         this.poblarFiltrosDinamicos(this.datosCanchas);
         this.actualizarEstadisticas(this.datosCanchas);
 
-        const featureCollection = {
-            type: 'FeatureCollection',
-            features: this.datosCanchas.map((row) => ({ type: 'Feature', properties: row, geometry: row.geometry }))
-        };
-
-        this.dibujarCapas(featureCollection);
+        // Redibuja las capas limpiando las anteriores (evita polígonos duplicados tras editar o eliminar)
+        this.actualizarCapasEnMapa(this.datosCanchas);
         this.renderizarListaCanchas(this.datosCanchas);
+
+        // Si el panel de administración está abierto, mantiene su listado al día
+        if (document.getElementById('admin-lista-canchas')) this.renderizarListaCanchasAdmin();
 
         setTimeout(() => this.map.invalidateSize(), 100);
     }
@@ -1273,18 +1535,22 @@ class MapViewer {
         this.capaSinteticas = L.geoJSON(datosCanchas, {
             filter: (f) => ['artificial_turf', 'grass'].includes(f.properties.surface),
             style: { color: "#059669", fillColor: "#10b981", ...opciones },
+            // Canchas tipo Point: no dibujar el marcador por defecto de Leaflet (el pin verde ya se dibuja aparte)
+            pointToLayer: (f, latlng) => L.circleMarker(latlng, { radius: 0, opacity: 0, fillOpacity: 0, interactive: false }),
             onEachFeature
         }).addTo(this.map);
 
         this.capaPavimentadas = L.geoJSON(datosCanchas, {
             filter: (f) => ['asphalt', 'concrete', 'paving_stones'].includes(f.properties.surface),
             style: { color: "#4f46e5", fillColor: "#6366f1", ...opciones },
+            pointToLayer: (f, latlng) => L.circleMarker(latlng, { radius: 0, opacity: 0, fillOpacity: 0, interactive: false }),
             onEachFeature
         }).addTo(this.map);
 
         this.capaOtras = L.geoJSON(datosCanchas, {
             filter: (f) => !f.properties.surface || !['artificial_turf', 'grass', 'asphalt', 'concrete', 'paving_stones'].includes(f.properties.surface),
             style: { color: "#d97706", fillColor: "#f59e0b", ...opciones },
+            pointToLayer: (f, latlng) => L.circleMarker(latlng, { radius: 0, opacity: 0, fillOpacity: 0, interactive: false }),
             onEachFeature
         }).addTo(this.map);
 
@@ -1393,7 +1659,7 @@ class MapViewer {
 
         this.capaLimite.bringToBack();
 
-        // 🟢 Líneas agregadas para el enfoque inicial y restricción de límites de Sabaneta
+        // Enfoque inicial y restricción de movimiento al área de Sabaneta
         const limites = this.capaLimite.getBounds();
         this.map.fitBounds(limites, { padding: [30, 30] });
         this.map.setMaxBounds(limites.pad(0.6));
@@ -1488,7 +1754,7 @@ class MapViewer {
 
     async cargarCapaGdalProcesada() {
         try {
-            // 🟢 Agregado ?t= para evitar que el navegador use la versión en caché
+            // Se agrega ?t= para evitar que el navegador use la versión en caché
             const urlCapaGdal = `https://vdltyryvmphxdcxjrgsf.supabase.co/storage/v1/object/public/evidencias/canchas_analisis_gdal.geojson?t=${new Date().getTime()}`;
             const res = await fetch(urlCapaGdal);
             if (!res.ok) return;
@@ -1595,6 +1861,7 @@ class MapViewer {
             this.capaZonasInfluencia.addTo(this.map);
 
             if (this.layerControl) {
+                try { this.layerControl.removeLayer(this.capaZonasInfluencia); } catch (e) { }
                 this.layerControl.addOverlay(this.capaZonasInfluencia, "🎯 Zonas de Influencia (Buffers 350m)");
             }
 
@@ -2228,7 +2495,7 @@ class MapViewer {
 
                 const bannerFile = document.getElementById('evento-banner-file').files[0];
                 if (bannerFile) {
-                    // 💡 RUTA CORREGIDA: Sin repetir el nombre del bucket al inicio para evitar el error NoSuchKey
+                    // Ruta sin repetir el nombre del bucket al inicio para evitar el error NoSuchKey
                     const filePath = `eventos_banners/${Date.now()}_${bannerFile.name}`;
 
                     const { error: uploadError } = await this.supabase.storage
@@ -2278,7 +2545,7 @@ class MapViewer {
         const contacto = inputContacto ? inputContacto.value.trim() : '';
 
         if (!contacto) {
-            alert('Por favor ingresa tu contacto o nombre para registrar la inscripción.');
+            this.toast('⚠️ Ingresa tu contacto o nombre para registrar la inscripción.');
             return;
         }
 
@@ -2293,14 +2560,14 @@ class MapViewer {
         if (error) {
             console.error("Error de Supabase:", error);
             if (error.code === '23505') {
-                alert('⚠️ Ya te encuentras inscrito en este evento con este contacto.');
+                this.toast('⚠️ Ya te encuentras inscrito en este evento con este contacto.');
             } else {
-                alert('❌ Error al procesar la inscripción.');
+                this.toast('❌ Error al procesar la inscripción.');
             }
             return;
         }
 
-        alert(`✅ ¡Inscripción exitosa como ${tipoAsistencia}!`);
+        this.toast(`✅ ¡Inscripción exitosa como ${tipoAsistencia}!`);
         if (inputContacto) inputContacto.value = '';
         await this.cargarEventosCancha(this.canchaSeleccionadaId);
     }
@@ -2372,142 +2639,300 @@ class MapViewer {
         }
     }
 
+    // ------------------------------------------------------------------
+    // ADMIN · PANEL Y CANCHAS (listar, crear, editar y eliminar)
+    // ------------------------------------------------------------------
     initAdminPanelEvents() {
-        const btnAbrir = document.getElementById('btn-abrir-admin');
-        const modalAdmin = document.getElementById('admin-modal-overlay');
-        const btnCerrar = document.getElementById('admin-modal-cerrar');
+        const $ = (id) => document.getElementById(id);
+        const btnAbrir = $('btn-abrir-admin');
+        const modalAdmin = $('admin-modal-overlay');
+        const btnCerrar = $('admin-modal-cerrar');
 
         if (btnAbrir && modalAdmin) {
             btnAbrir.addEventListener('click', () => {
                 modalAdmin.classList.remove('oculto');
+                this.mostrarVistaCanchasAdmin('lista');
                 this.cargarDatosAdminCanchas();
                 this.cargarDatosAdminEventos();
                 this.cargarDatosAdminUsuarios();
                 this.cargarAlertasDesgasteAdmin();
             });
         }
-
         if (btnCerrar && modalAdmin) {
             btnCerrar.addEventListener('click', () => modalAdmin.classList.add('oculto'));
         }
 
-        const tabCanchas = document.getElementById('tab-btn-canchas');
-        const tabEventos = document.getElementById('tab-btn-eventos');
-        const tabRoles = document.getElementById('tab-btn-roles');
+        // Pestañas
+        const pestanas = [
+            ['tab-btn-canchas', 'admin-seccion-canchas'],
+            ['tab-btn-analisis', 'admin-seccion-analisis'],
+            ['tab-btn-eventos', 'admin-seccion-eventos'],
+            ['tab-btn-roles', 'admin-seccion-roles']
+        ].map(([t, s]) => [$(t), $(s)]).filter(([t, s]) => t && s);
 
-        const secCanchas = document.getElementById('admin-seccion-canchas');
-        const secEventos = document.getElementById('admin-seccion-eventos');
-        const secRoles = document.getElementById('admin-seccion-roles');
-
-        if (tabCanchas && tabEventos && tabRoles) {
-            const pestanas = [
-                [tabCanchas, secCanchas],
-                [tabEventos, secEventos],
-                [tabRoles, secRoles]
-            ];
-            pestanas.forEach(([tab, seccion]) => {
-                tab.addEventListener('click', () => {
-                    pestanas.forEach(([t, s]) => {
-                        const activa = t === tab;
-                        t.classList.toggle('is-active', activa);
-                        s.classList.toggle('oculto', !activa);
-                    });
+        pestanas.forEach(([tab]) => {
+            tab.addEventListener('click', () => {
+                pestanas.forEach(([t, s]) => {
+                    const activa = t === tab;
+                    t.classList.toggle('is-active', activa);
+                    s.classList.toggle('oculto', !activa);
                 });
             });
-        }
+        });
 
-        const formCanchaAdmin = document.getElementById('form-crear-cancha-admin');
-        if (formCanchaAdmin) {
-            formCanchaAdmin.addEventListener('submit', async (e) => {
-                e.preventDefault();
-                await this.crearCanchaAdmin();
-            });
-        }
+        // Canchas
+        $('btn-admin-nueva-cancha')?.addEventListener('click', () => this.abrirFormularioCanchaAdmin(null));
+        $('btn-admin-volver-lista')?.addEventListener('click', () => this.mostrarVistaCanchasAdmin('lista'));
+        $('btn-admin-cancelar-cancha')?.addEventListener('click', () => this.mostrarVistaCanchasAdmin('lista'));
+        $('admin-buscar-cancha')?.addEventListener('input', () => this.renderizarListaCanchasAdmin());
+        $('btn-admin-ubicar-mapa')?.addEventListener('click', () => this.elegirUbicacionEnMapa());
+        $('admin-cancha-imagen')?.addEventListener('input', () => this.actualizarVistaPreviaImagenAdmin());
+        $('admin-cancha-foto')?.addEventListener('change', () => this.actualizarVistaPreviaImagenAdmin());
+        $('form-crear-cancha-admin')?.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            await this.guardarCanchaAdmin();
+        });
     }
 
-    async crearCanchaAdmin() {
-        const nombre = document.getElementById('admin-cancha-nombre').value.trim();
-        const surface = document.getElementById('admin-cancha-surface').value;
-        const barrioId = parseInt(document.getElementById('admin-cancha-barrio').value) || null;
-        const lat = parseFloat(document.getElementById('admin-cancha-lat').value);
-        const lng = parseFloat(document.getElementById('admin-cancha-lng').value);
-        const imagenUrl = document.getElementById('admin-cancha-imagen').value.trim();
-        const msgEl = document.getElementById('mensaje-admin-cancha');
+    mostrarVistaCanchasAdmin(vista) {
+        document.getElementById('admin-canchas-lista-vista')?.classList.toggle('oculto', vista !== 'lista');
+        document.getElementById('admin-cancha-form-vista')?.classList.toggle('oculto', vista !== 'form');
+        const modal = document.querySelector('#admin-modal-overlay .modal-content');
+        if (modal) modal.scrollTop = 0;
+    }
 
-        if (isNaN(lat) || isNaN(lng)) {
-            msgEl.innerText = '⚠️ Ingresa coordenadas válidas.';
-            msgEl.style.color = '#fbbf24';
-            return;
-        }
+    poblarBarriosAdmin() {
+        const sel = document.getElementById('admin-cancha-barrio');
+        if (!sel) return;
+        const barrios = [...(this.listaBarrios || [])]
+            .sort((a, b) => String(a.nombre).localeCompare(String(b.nombre)));
+        sel.innerHTML = '<option value="">Sin barrio</option>' +
+            barrios.map(b => `<option value="${b.id}">${this.escaparHtml(b.nombre)}</option>`).join('');
+    }
 
-        msgEl.innerText = 'Validando ubicación y registrando...';
-        msgEl.style.color = '#38bdf8';
+    actualizarVistaPreviaImagenAdmin() {
+        const prev = document.getElementById('admin-cancha-preview');
+        if (!prev) return;
+        const archivo = document.getElementById('admin-cancha-foto')?.files[0];
+        const url = document.getElementById('admin-cancha-imagen')?.value.trim();
+        const src = archivo ? URL.createObjectURL(archivo) : url;
+        prev.innerHTML = src
+            ? `<img src="${this.escaparHtml(src)}" alt="Vista previa de la cancha" onerror="this.remove()">`
+            : '<span>Sin imagen</span>';
+    }
 
-        const geometry = { type: "Point", coordinates: [lng, lat] };
+    abrirFormularioCanchaAdmin(cancha = null) {
+        const $ = (id) => document.getElementById(id);
+        $('form-crear-cancha-admin').reset();
+        this.poblarBarriosAdmin();
+        this._canchaAdminEditando = cancha;
 
-        const { error } = await this.supabase.from('canchas').insert([{
-            nombre,
-            surface,
-            barrio_id: barrioId,
-            geometry,
-            imagen_url: imagenUrl || null
-        }]);
+        $('admin-cancha-id').value = cancha ? cancha.id : '';
+        $('admin-cancha-form-titulo').textContent = cancha ? 'Editar cancha' : 'Registrar nueva cancha';
+        $('btn-admin-guardar-cancha-texto').textContent = cancha ? 'Guardar cambios' : 'Guardar nueva cancha';
+        $('mensaje-admin-cancha').textContent = '';
+        $('admin-cancha-aviso-geom').classList.add('oculto');
 
-        if (error) {
-            if (error.message?.includes('Error de validación espacial')) {
-                msgEl.innerText = '❌ Rechazado por PostGIS: La cancha está fuera de Sabaneta.';
-            } else {
-                msgEl.innerText = '❌ Error al registrar la cancha en la base de datos.';
+        if (cancha) {
+            $('admin-cancha-nombre').value = cancha.nombre || '';
+
+            const selSup = $('admin-cancha-surface');
+            const sup = cancha.surface || '';
+            if (![...selSup.options].some(o => o.value === sup)) selSup.add(new Option(sup, sup));
+            selSup.value = sup;
+
+            $('admin-cancha-barrio').value = cancha.barrio_id ?? '';
+
+            const c = this.obtenerCoordenadasGeom(cancha.geometry);
+            if (c && !isNaN(c.lat) && !isNaN(c.lng)) {
+                $('admin-cancha-lat').value = c.lat.toFixed(6);
+                $('admin-cancha-lng').value = c.lng.toFixed(6);
             }
-            msgEl.style.color = '#ef4444';
-            return;
+            if (cancha.geometry && cancha.geometry.type !== 'Point') {
+                $('admin-cancha-aviso-geom').classList.remove('oculto');
+            }
+
+            $('admin-cancha-horario').value = cancha.horario || '';
+            $('admin-cancha-imagen').value = cancha.imagen_url || '';
         }
 
-        msgEl.innerText = '✅ ¡Cancha registrada con éxito dentro del municipio!';
-        msgEl.style.color = '#34d399';
-        document.getElementById('form-crear-cancha-admin').reset();
-        await this.cargarCanchas();
-        await this.cargarDatosAdminCanchas();
+        this.actualizarVistaPreviaImagenAdmin();
+        this.mostrarVistaCanchasAdmin('form');
     }
 
-    async cargarDatosAdminCanchas() {
-        const contenedor = document.getElementById('admin-lista-canchas');
-        if (!contenedor) return;
-        contenedor.innerHTML = '<p class="modal-subtexto">Cargando...</p>';
+    // Oculta el panel, deja elegir un punto en el mapa y vuelve con las coordenadas
+    elegirUbicacionEnMapa() {
+        const overlay = document.getElementById('admin-modal-overlay');
+        const contenedorMapa = this.map.getContainer();
+        overlay.classList.add('oculto');
+        this.irAlMapa();
+        contenedorMapa.style.cursor = 'crosshair';
+        this.toast('Haz clic en el mapa donde está la cancha. Esc para cancelar.', 'aviso');
 
-        const { data, error } = await this.supabase.from('canchas').select('id, nombre, surface');
-        if (error || !data) {
-            contenedor.innerHTML = '<p class="modal-subtexto">Error al cargar canchas.</p>';
+        const terminar = () => {
+            contenedorMapa.style.cursor = '';
+            document.removeEventListener('keydown', alEscape);
+            this.map.off('click', alClic);
+            overlay.classList.remove('oculto');
+        };
+        const alClic = (e) => {
+            document.getElementById('admin-cancha-lat').value = e.latlng.lat.toFixed(6);
+            document.getElementById('admin-cancha-lng').value = e.latlng.lng.toFixed(6);
+            terminar();
+            this.toast('Ubicación seleccionada.', 'ok');
+        };
+        const alEscape = (e) => { if (e.key === 'Escape') terminar(); };
+
+        this.map.on('click', alClic);
+        document.addEventListener('keydown', alEscape);
+    }
+
+    async guardarCanchaAdmin() {
+        const $ = (id) => document.getElementById(id);
+        const msg = $('mensaje-admin-cancha');
+        const boton = $('btn-admin-guardar-cancha');
+        const aviso = (texto, color) => { msg.textContent = texto; msg.style.color = color; };
+
+        const id = $('admin-cancha-id').value;
+        const editando = !!id;
+        const original = this._canchaAdminEditando;
+
+        const nombre = $('admin-cancha-nombre').value.trim();
+        const surface = $('admin-cancha-surface').value || null;
+        const barrioId = parseInt($('admin-cancha-barrio').value) || null;
+        const lat = parseFloat($('admin-cancha-lat').value.replace(',', '.'));
+        const lng = parseFloat($('admin-cancha-lng').value.replace(',', '.'));
+        const horario = $('admin-cancha-horario').value.trim();
+        let imagenUrl = $('admin-cancha-imagen').value.trim();
+        const archivo = $('admin-cancha-foto').files[0];
+
+        if (!nombre) { aviso('Escribe el nombre de la cancha.', '#b3382d'); return; }
+        if (isNaN(lat) || isNaN(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180) {
+            aviso('Ingresa coordenadas válidas (latitud y longitud).', '#b3382d');
             return;
         }
 
+        boton.disabled = true;
+        try {
+            aviso(editando ? 'Guardando cambios...' : 'Validando ubicación y registrando...', '#1c6ea4');
+
+            // Foto subida desde el equipo -> bucket "evidencias"
+            if (archivo) {
+                const ext = (archivo.name.split('.').pop() || 'jpg').toLowerCase();
+                const ruta = `canchas_fotos/${Date.now()}.${ext}`;
+                const { error: errSubida } = await this.supabase.storage.from('evidencias').upload(ruta, archivo);
+                if (errSubida) throw errSubida;
+                imagenUrl = this.supabase.storage.from('evidencias').getPublicUrl(ruta).data.publicUrl;
+            }
+
+            const datos = { nombre, surface, barrio_id: barrioId, imagen_url: imagenUrl || null };
+
+            // Solo se toca la geometría si la ubicación cambió (así no se pierde un polígono sin querer)
+            const origen = original ? this.obtenerCoordenadasGeom(original.geometry) : null;
+            const cambioUbicacion = !editando || !origen ||
+                Math.abs(origen.lat - lat) > 2e-6 || Math.abs(origen.lng - lng) > 2e-6;
+            if (cambioUbicacion) datos.geometry = { type: 'Point', coordinates: [lng, lat] };
+
+            // "horario" solo se envía si hay valor o si la columna ya existe en esa fila
+            if (horario || (original && 'horario' in original)) datos.horario = horario || null;
+
+            let resultado;
+            if (editando) {
+                resultado = await this.supabase.from('canchas').update(datos).eq('id', id).select();
+                if (!resultado.error && (!resultado.data || resultado.data.length === 0)) {
+                    throw new Error('Sin permisos: revisa las políticas (RLS) de UPDATE en la tabla canchas.');
+                }
+            } else {
+                resultado = await this.supabase.from('canchas').insert([datos]);
+            }
+            if (resultado.error) throw resultado.error;
+
+            aviso('', '');
+            this.toast(editando ? 'Cancha actualizada con éxito.' : 'Cancha registrada con éxito.', 'ok');
+            await this.cargarCanchas();
+            this.cargarDatosAdminCanchas();
+            this.mostrarVistaCanchasAdmin('lista');
+        } catch (err) {
+            console.error('Error al guardar la cancha:', err);
+            const t = String(err?.message || err);
+            let texto = 'No se pudo guardar la cancha.';
+            if (t.includes('validación espacial')) texto = 'Rechazado por PostGIS: la ubicación está fuera de Sabaneta.';
+            else if (/horario/i.test(t)) texto = 'La tabla "canchas" no tiene la columna "horario". Déjalo vacío o créala en Supabase.';
+            else if (t.includes('permisos')) texto = t;
+            aviso(texto, '#b3382d');
+        } finally {
+            boton.disabled = false;
+        }
+    }
+
+    cargarDatosAdminCanchas() {
+        this.renderizarListaCanchasAdmin();
+    }
+
+    renderizarListaCanchasAdmin() {
+        const contenedor = document.getElementById('admin-lista-canchas');
+        const contador = document.getElementById('admin-canchas-contador');
+        if (!contenedor) return;
+
+        const q = (document.getElementById('admin-buscar-cancha')?.value || '').trim().toLowerCase();
+        const todas = this.datosCanchas || [];
+        const lista = todas
+            .filter(c => !q || (c.nombre || '').toLowerCase().includes(q) || (c.barrio || '').toLowerCase().includes(q))
+            .sort((a, b) => (a.nombre || '').localeCompare(b.nombre || ''));
+
+        if (contador) contador.textContent = `${lista.length} de ${todas.length} canchas`;
         contenedor.innerHTML = '';
-        data.forEach(c => {
-            const div = document.createElement('div');
-            div.className = 'row-card';
-            div.innerHTML = `
-                <div>
-                    <strong style="color: #f8fafc; font-size: 0.85rem;">${c.nombre || 'Cancha'}</strong>
-                    <p style="font-size: 0.75rem; color: #94a3b8; margin: 0;">${c.surface || 'N/A'}</p>
+
+        if (lista.length === 0) {
+            contenedor.innerHTML = '<p class="modal-subtexto">No hay canchas que coincidan con la búsqueda.</p>';
+            return;
+        }
+
+        lista.forEach(c => {
+            const sup = this.infoSuperficie(c.surface);
+            const foto = c.imagen_url
+                ? `<img src="${this.escaparHtml(c.imagen_url)}" alt="" loading="lazy" onerror="this.remove()">`
+                : '';
+
+            const fila = document.createElement('div');
+            fila.className = 'row-card admin-cancha-row';
+            fila.innerHTML = `
+                <span class="admin-cancha-row__thumb">${foto}</span>
+                <div class="admin-cancha-row__txt">
+                    <strong>${this.escaparHtml(c.nombre || 'Cancha de fútbol')}</strong>
+                    <small><i style="--dot:${sup.color}"></i>${this.escaparHtml(sup.label)} · ${this.escaparHtml(c.barrio || 'Sin barrio')}</small>
                 </div>
-                <button onclick="window.mapApp.eliminarCanchaAdmin(${c.id})" style="background: #dc2626; color: white; border: none; padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; cursor: pointer;">🗑️ Eliminar</button>
-            `;
-            contenedor.appendChild(div);
+                <div class="admin-cancha-row__acc">
+                    <button type="button" class="btn btn--secondary btn--sm" data-editar>Editar</button>
+                    <button type="button" class="btn btn--peligro-suave btn--sm" data-eliminar>Eliminar</button>
+                </div>`;
+            fila.querySelector('[data-editar]').addEventListener('click', () => this.abrirFormularioCanchaAdmin(c));
+            fila.querySelector('[data-eliminar]').addEventListener('click', () => this.eliminarCanchaAdmin(c.id));
+            contenedor.appendChild(fila);
         });
     }
 
     async eliminarCanchaAdmin(canchaId) {
-        if (!confirm("⚠️ ¿Estás seguro de eliminar esta cancha? Se borrarán sus referencias.")) return;
+        const c = (this.datosCanchas || []).find(x => x.id == canchaId);
+        const ok = await this.confirmar(
+            '¿Eliminar esta cancha?',
+            `Se eliminará "${c?.nombre || 'la cancha'}" y sus referencias. Esta acción no se puede deshacer.`,
+            'Sí, eliminar'
+        );
+        if (!ok) return;
 
-        const { error } = await this.supabase.from('canchas').delete().eq('id', canchaId);
-        if (error) {
-            alert("❌ No se pudo eliminar la cancha.");
+        const { data, error } = await this.supabase.from('canchas').delete().eq('id', canchaId).select();
+        if (error || !data || data.length === 0) {
+            const t = error?.code === '23503'
+                ? 'La cancha tiene eventos, calificaciones o evidencias asociados.'
+                : 'No se pudo eliminar la cancha.';
+            this.toast(t, 'error');
             return;
         }
 
-        alert("✅ Cancha eliminada con éxito.");
+        this.toast('Cancha eliminada con éxito.', 'ok');
         await this.cargarCanchas();
-        await this.cargarDatosAdminCanchas();
+        this.cargarDatosAdminCanchas();
     }
 
     async cargarAlertasDesgasteAdmin() {
@@ -2706,15 +3131,20 @@ class MapViewer {
     }
 
     async eliminarEventoAdmin(eventoId) {
-        if (!confirm("🚨 ¿Eliminar este torneo/evento definitivamente?")) return;
+        const ok = await this.confirmar(
+            '¿Eliminar este evento?',
+            'Se eliminará el torneo o evento de forma definitiva. Esta acción no se puede deshacer.',
+            'Sí, eliminar'
+        );
+        if (!ok) return;
 
         const { error } = await this.supabase.from('eventos').delete().eq('id', eventoId);
         if (error) {
-            alert("❌ Error al eliminar el evento.");
+            this.toast('❌ Error al eliminar el evento.');
             return;
         }
 
-        alert("✅ Evento eliminado.");
+        this.toast('✅ Evento eliminado.');
         await this.cargarEventosGlobales();
         await this.cargarDatosAdminEventos();
     }
@@ -2756,11 +3186,11 @@ class MapViewer {
             .eq('id', userId);
 
         if (error) {
-            alert("❌ Error al actualizar el rol.");
+            this.toast('❌ Error al actualizar el rol.');
             return;
         }
 
-        alert(`✅ Rol actualizado a ${nuevoRol.toUpperCase()} con éxito.`);
+        this.toast(`✅ Rol actualizado a ${nuevoRol.toUpperCase()} con éxito.`);
         await this.cargarDatosAdminUsuarios();
     }
 }

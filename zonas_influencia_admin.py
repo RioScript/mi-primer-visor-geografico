@@ -2,34 +2,45 @@ import json
 import os
 from osgeo import ogr, osr
 import requests
+from supabase import create_client
 
 # --- CONFIGURACIÓN DE SUPABASE ---
 SUPABASE_URL = "https://vdltyryvmphxdcxjrgsf.supabase.co"
 SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZkbHR5cnl2bXBoeGRjeGpyZ3NmIiwicm9sZSI6InFub24iLCJpYXQiOjE3ODc3NTU5NTgsImV4cCI6MjEwMzMzMTk1OH0.vxqi58vWcfbWqoRTs9-AhalTOJS5rkOGQKbGrCOb9WA"
+
+# Inicializar el cliente oficial de Supabase
+supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 HEADERS = {"apikey": SUPABASE_KEY, "Authorization": f"Bearer {SUPABASE_KEY}"}
 
 # ==========================================
-# FUNCIÓN DE SUBIDA AUTOMÁTICA A SUPABASE STORAGE
+# FUNCIÓN DE SUBIDA AUTOMÁTICA CON EL CLIENTE OFICIAL
 # ==========================================
 def subir_a_supabase_storage(nombre_archivo):
-    url_upload = f"{SUPABASE_URL}/storage/v1/object/evidencias/{nombre_archivo}"
-    headers = {
-        "apikey": SUPABASE_KEY,
-        "Authorization": f"Bearer {SUPABASE_KEY}",
-        "Content-Type": "application/geo+json",
-        "x-upsert": "true"  # Permite sobrescribir el archivo existente en Supabase Storage
-    }
-
+    print(f"🚀 Subiendo {nombre_archivo} a Supabase Storage...")
     try:
         with open(nombre_archivo, "rb") as f:
-            res = requests.put(url_upload, headers=headers, data=f)
-            
-            if res.status_code in [200, 201]:
-                print(f"🚀 ¡{nombre_archivo} subido y actualizado con éxito en Supabase Storage!")
-            else:
-                print(f"❌ Error al subir {nombre_archivo} (Código {res.status_code}):", res.text)
+            file_bytes = f.read()
+
+        # Intentamos actualizar el archivo con upsert habilitado
+        response = supabase.storage.from_("evidencias").upload(
+            path=nombre_archivo,
+            file=file_bytes,
+            file_options={"upsert": "true", "content-type": "application/geo+json"}
+        )
+        print(f"✅ ¡{nombre_archivo} subido y actualizado con éxito en Supabase Storage!")
     except Exception as e:
-        print(f"❌ Excepción crítica al sincronizar con Supabase: {e}")
+        # Si ya existe y upload lanza conflicto, usamos update
+        try:
+            with open(nombre_archivo, "rb") as f:
+                file_bytes = f.read()
+            supabase.storage.from_("evidencias").update(
+                path=nombre_archivo,
+                file=file_bytes,
+                file_options={"upsert": "true", "content-type": "application/geo+json"}
+            )
+            print(f"✅ ¡{nombre_archivo} actualizado (via update) con éxito!")
+        except Exception as err:
+            print(f"❌ Error crítico al subir {nombre_archivo}: {err}")
 
 # ==========================================
 # FUNCIONES AYUDANTES

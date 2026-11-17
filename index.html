@@ -24,6 +24,7 @@
     <!-- Estilos del nuevo acceso, logo y nombre (se carga después para sobrescribir) -->
     <link rel="stylesheet" href="styles-login.css">
     <link rel="stylesheet" href="styles-interfaz.css">
+    <link rel="stylesheet" href="styles-admin.css">
 </head>
 
 <body>
@@ -905,77 +906,136 @@
     <div id="admin-modal-overlay" class="modal-overlay oculto">
         <div class="modal-content modal-content--lg" role="dialog" aria-modal="true" aria-labelledby="admin-titulo">
             <button id="admin-modal-cerrar" type="button" class="modal-cerrar" aria-label="Cerrar">
-                <svg class="icon">
-                    <use href="#i-x" />
-                </svg>
+                <svg class="icon"><use href="#i-x" /></svg>
             </button>
             <h3 id="admin-titulo" class="modal-titulo">Panel de administración</h3>
             <p class="modal-subtexto">Gestión de escenarios, canchas y moderación de eventos.</p>
 
-            <div class="tabs tabs--admin">
+            <div class="tabs tabs--admin" role="tablist">
                 <button id="tab-btn-canchas" type="button" class="tab is-active">Canchas</button>
-                <button id="tab-btn-eventos" type="button" class="tab">Torneos y eventos</button>
+                <button id="tab-btn-analisis" type="button" class="tab">Análisis GIS</button>
+                <button id="tab-btn-eventos" type="button" class="tab">Eventos</button>
                 <button id="tab-btn-roles" type="button" class="tab">Permisos</button>
             </div>
 
-            <!-- Sección 1: canchas -->
+            <!-- ===== Pestaña 1: canchas ===== -->
             <div id="admin-seccion-canchas">
-                <h4 class="admin-h">Registrar nueva cancha</h4>
-                <form id="form-crear-cancha-admin" class="panel-form">
-                    <div class="grupo-campo">
-                        <label for="admin-cancha-nombre">Nombre de la cancha</label>
-                        <input type="text" id="admin-cancha-nombre" class="input-reserva"
-                            placeholder="Ej: Cancha Sintética El Dorado" required />
-                    </div>
-                    <div class="form-row">
-                        <div class="grupo-campo">
-                            <label for="admin-cancha-surface">Superficie</label>
-                            <select id="admin-cancha-surface" class="input-reserva">
-                                <option value="artificial_turf">Sintética / Grama Artificial</option>
-                                <option value="grass">Grama Natural</option>
-                                <option value="concrete">Concreto / Pavimentada</option>
-                                <option value="asphalt">Asfalto</option>
-                            </select>
-                        </div>
-                        <div class="grupo-campo">
-                            <label for="admin-cancha-barrio">ID del barrio (opcional)</label>
-                            <input type="number" id="admin-cancha-barrio" class="input-reserva" placeholder="Ej: 1" />
-                        </div>
-                    </div>
-                    <div class="form-row">
-                        <div class="grupo-campo">
-                            <label for="admin-cancha-lat">Latitud</label>
-                            <input type="text" id="admin-cancha-lat" class="input-reserva" placeholder="Ej: 6.15150"
-                                required />
-                        </div>
-                        <div class="grupo-campo">
-                            <label for="admin-cancha-lng">Longitud</label>
-                            <input type="text" id="admin-cancha-lng" class="input-reserva" placeholder="Ej: -75.61660"
-                                required />
-                        </div>
-                    </div>
-                    <div class="grupo-campo">
-                        <label for="admin-cancha-imagen">URL de imagen (opcional)</label>
-                        <input type="url" id="admin-cancha-imagen" class="input-reserva" placeholder="https://..." />
-                    </div>
-                    <button type="submit" class="btn btn--primary btn--block">Guardar nueva cancha</button>
-                    <p id="mensaje-admin-cancha" class="form-mensaje"></p>
-                </form>
 
-                <h4 class="admin-h">Listado y estado de canchas</h4>
-                <div id="admin-lista-canchas" class="scroll-box scroll-box--sm">
-                    <p class="modal-subtexto">Cargando canchas...</p>
+                <!-- Vista A: listado -->
+                <div id="admin-canchas-lista-vista">
+                    <div class="admin-toolbar">
+                        <label class="admin-buscar">
+                            <svg class="icon"><use href="#i-search" /></svg>
+                            <input type="search" id="admin-buscar-cancha" placeholder="Buscar por nombre o barrio"
+                                autocomplete="off" aria-label="Buscar cancha">
+                        </label>
+                        <button type="button" id="btn-admin-nueva-cancha" class="btn btn--primary btn--sm">
+                            <svg class="icon"><use href="#i-plus" /></svg>
+                            Nueva cancha
+                        </button>
+                    </div>
+                    <p id="admin-canchas-contador" class="modal-subtexto"></p>
+                    <div id="admin-lista-canchas" class="scroll-box">
+                        <p class="modal-subtexto">Cargando canchas...</p>
+                    </div>
                 </div>
+
+                <!-- Vista B: formulario (crear y editar) -->
+                <div id="admin-cancha-form-vista" class="oculto">
+                    <button type="button" id="btn-admin-volver-lista" class="link-btn admin-volver">← Volver al listado</button>
+                    <h4 id="admin-cancha-form-titulo" class="admin-h">Registrar nueva cancha</h4>
+
+                    <form id="form-crear-cancha-admin" class="panel-form">
+                        <input type="hidden" id="admin-cancha-id">
+
+                        <div class="grupo-campo">
+                            <label for="admin-cancha-nombre">Nombre de la cancha</label>
+                            <input type="text" id="admin-cancha-nombre" class="input-reserva"
+                                placeholder="Ej: Cancha Sintética El Dorado" required />
+                        </div>
+
+                        <div class="form-row">
+                            <div class="grupo-campo">
+                                <label for="admin-cancha-surface">Superficie</label>
+                                <select id="admin-cancha-surface" class="input-reserva">
+                                    <option value="artificial_turf">Sintética / grama artificial</option>
+                                    <option value="grass">Grama natural</option>
+                                    <option value="concrete">Concreto / pavimentada</option>
+                                    <option value="asphalt">Asfalto</option>
+                                    <option value="paving_stones">Adoquín</option>
+                                    <option value="">Sin dato</option>
+                                </select>
+                            </div>
+                            <div class="grupo-campo">
+                                <label for="admin-cancha-barrio">Barrio</label>
+                                <select id="admin-cancha-barrio" class="input-reserva">
+                                    <option value="">Sin barrio</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="admin-ubicacion">
+                            <div class="admin-ubicacion__cab">
+                                <span class="field-label">Ubicación</span>
+                                <button type="button" id="btn-admin-ubicar-mapa" class="btn btn--secondary btn--sm">
+                                    <svg class="icon"><use href="#i-target" /></svg>
+                                    Elegir en el mapa
+                                </button>
+                            </div>
+                            <div class="form-row">
+                                <div class="grupo-campo">
+                                    <label for="admin-cancha-lat">Latitud</label>
+                                    <input type="text" id="admin-cancha-lat" class="input-reserva"
+                                        placeholder="Ej: 6.15150" inputmode="decimal" required />
+                                </div>
+                                <div class="grupo-campo">
+                                    <label for="admin-cancha-lng">Longitud</label>
+                                    <input type="text" id="admin-cancha-lng" class="input-reserva"
+                                        placeholder="Ej: -75.61660" inputmode="decimal" required />
+                                </div>
+                            </div>
+                            <p id="admin-cancha-aviso-geom" class="admin-aviso oculto">
+                                Esta cancha está dibujada como polígono. Si cambias las coordenadas, se reemplazará por un punto.
+                            </p>
+                        </div>
+
+                        <div class="grupo-campo">
+                            <label for="admin-cancha-horario">Horario (opcional)</label>
+                            <input type="text" id="admin-cancha-horario" class="input-reserva"
+                                placeholder="Ej: Lunes a domingo, 6:00 a. m. a 10:00 p. m." />
+                        </div>
+
+                        <div class="admin-imagen">
+                            <span class="field-label">Foto de la cancha (opcional)</span>
+                            <div id="admin-cancha-preview" class="admin-preview"><span>Sin imagen</span></div>
+                            <input type="url" id="admin-cancha-imagen" class="input-reserva"
+                                placeholder="Pega la URL de una imagen: https://..." />
+                            <div class="admin-o">o sube una foto desde tu equipo</div>
+                            <input type="file" id="admin-cancha-foto" class="input-reserva" accept="image/*" />
+                        </div>
+
+                        <div class="admin-form-acciones">
+                            <button type="button" id="btn-admin-cancelar-cancha" class="btn btn--ghost">Cancelar</button>
+                            <button type="submit" id="btn-admin-guardar-cancha" class="btn btn--primary">
+                                <svg class="icon"><use href="#i-check" /></svg>
+                                <span id="btn-admin-guardar-cancha-texto">Guardar nueva cancha</span>
+                            </button>
+                        </div>
+                        <p id="mensaje-admin-cancha" class="form-mensaje"></p>
+                    </form>
+                </div>
+            </div>
+
+            <!-- ===== Pestaña 2: análisis GIS ===== -->
+            <div id="admin-seccion-analisis" class="oculto">
+                <h4 class="admin-h">Análisis espacial</h4>
+                <div id="admin-gis-slot"></div>
 
                 <div class="panel-form">
                     <h4 class="admin-h">Auditoría de desgaste y concurrencia</h4>
-                    <p class="modal-subtexto">Registros generados automáticamente por PostGIS en cada inscripción a
-                        eventos.</p>
-                    <button type="button" onclick="mapApp.cargarAlertasDesgasteAdmin()"
-                        class="btn btn--secondary btn--sm">
-                        <svg class="icon">
-                            <use href="#i-refresh" />
-                        </svg>
+                    <p class="modal-subtexto">Registros generados automáticamente por PostGIS en cada inscripción a eventos.</p>
+                    <button type="button" onclick="mapApp.cargarAlertasDesgasteAdmin()" class="btn btn--secondary btn--sm">
+                        <svg class="icon"><use href="#i-refresh" /></svg>
                         Consultar alertas de desgaste
                     </button>
                     <div id="lista-alertas-desgaste" class="scroll-box scroll-box--sm">
@@ -984,7 +1044,7 @@
                 </div>
             </div>
 
-            <!-- Sección 2: moderación -->
+            <!-- ===== Pestaña 3: moderación ===== -->
             <div id="admin-seccion-eventos" class="oculto">
                 <h4 class="admin-h">Moderación de torneos y desafíos activos</h4>
                 <p class="modal-subtexto">Elimina eventos que incumplan las normas o presenten fraudes.</p>
@@ -993,11 +1053,10 @@
                 </div>
             </div>
 
-            <!-- Sección 3: roles -->
+            <!-- ===== Pestaña 4: roles ===== -->
             <div id="admin-seccion-roles" class="oculto">
                 <h4 class="admin-h">Permisos y administradores</h4>
-                <p class="modal-subtexto">Cambia el rol de los usuarios registrados entre administrador y usuario
-                    estándar.</p>
+                <p class="modal-subtexto">Cambia el rol de los usuarios registrados entre administrador y usuario estándar.</p>
                 <div id="admin-lista-usuarios" class="scroll-box">
                     <p class="modal-subtexto">Cargando cuentas de usuarios...</p>
                 </div>
