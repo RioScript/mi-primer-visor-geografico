@@ -689,7 +689,93 @@ class MapViewer {
     initBuscador() {
         const input = document.getElementById('buscador-canchas');
         if (!input) return;
-        input.addEventListener('input', () => this.aplicarFiltrosGlobalesDebounced());
+
+        // 1. Crear el contenedor de sugerencias justo debajo de la barra de búsqueda
+        const searchbar = input.closest('.searchbar') || input.parentElement;
+        searchbar.style.position = 'relative';
+
+        let listaSugerencias = document.getElementById('sugerencias-buscador');
+        if (!listaSugerencias) {
+            listaSugerencias = document.createElement('ul');
+            listaSugerencias.id = 'sugerencias-buscador';
+            listaSugerencias.className = 'search-dropdown oculto';
+            searchbar.appendChild(listaSugerencias);
+        }
+
+        const renderizarSugerencias = (texto) => {
+            const query = texto.trim().toLowerCase();
+            listaSugerencias.innerHTML = '';
+
+            if (!query) {
+                listaSugerencias.classList.add('oculto');
+                return;
+            }
+
+            const coincidencias = this.datosCanchas
+                .filter(c => {
+                    const nombre = (c.nombre || '').toLowerCase();
+                    const barrio = (c.barrio || '').toLowerCase();
+                    return nombre.includes(query) || barrio.includes(query);
+                })
+                .slice(0, 6); // Mostrar máximo 6 resultados
+
+            if (coincidencias.length === 0) {
+                listaSugerencias.innerHTML = `<li class="search-dropdown__empty">No se encontraron canchas para "${this.escaparHtml(texto)}"</li>`;
+                listaSugerencias.classList.remove('oculto');
+                return;
+            }
+
+            coincidencias.forEach(cancha => {
+                const sup = this.infoSuperficie(cancha.surface);
+                const li = document.createElement('li');
+                li.className = 'search-dropdown__item';
+                li.innerHTML = `
+                <div class="search-dropdown__info">
+                    <strong>${this.escaparHtml(cancha.nombre || 'Cancha de fútbol')}</strong>
+                    <small>${this.escaparHtml(cancha.barrio || 'Sin barrio')}</small>
+                </div>
+                <span class="search-dropdown__tag" style="--dot:${sup.color}">${this.escaparHtml(sup.label)}</span>
+            `;
+
+                // Al hacer clic: rellenar input, ocultar menú y volar a la cancha en el mapa
+                li.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    input.value = cancha.nombre || '';
+                    listaSugerencias.classList.add('oculto');
+                    this.aplicarFiltrosGlobales();
+                    this.enfocarCancha(cancha, true);
+                });
+
+                listaSugerencias.appendChild(li);
+            });
+
+            listaSugerencias.classList.remove('oculto');
+        };
+
+        // 2. Escuchar escritura y foco en el buscador
+        input.addEventListener('input', (e) => {
+            renderizarSugerencias(e.target.value);
+            this.aplicarFiltrosGlobalesDebounced();
+        });
+
+        input.addEventListener('focus', (e) => {
+            if (e.target.value.trim() !== '') {
+                renderizarSugerencias(e.target.value);
+            }
+        });
+
+        // 3. Cerrar desplegable al hacer clic fuera o presionar Escape
+        document.addEventListener('click', (e) => {
+            if (!searchbar.contains(e.target)) {
+                listaSugerencias.classList.add('oculto');
+            }
+        });
+
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                listaSugerencias.classList.add('oculto');
+            }
+        });
     }
 
     initFiltrosAvanzados() {
@@ -770,13 +856,15 @@ class MapViewer {
         const cuerpo = tabla.querySelector('tbody');
 
         eventos.forEach(ev => {
-            const canchaObj = this.datosCanchas.find(c => c.id === ev.cancha_id);
+            // Uso de '==' para evitar conflictos si uno es número y el otro string
+            const canchaObj = this.datosCanchas.find(c => c.id == ev.cancha_id);
             const nombreCancha = this.escaparHtml(canchaObj?.nombre || 'Escenario deportivo');
             const titulo = this.escaparHtml(ev.tipo_evento === 'Torneo' ? (ev.titulo || 'Torneo') : ev.tipo_evento);
             const icono = ev.tipo_evento === 'Torneo' ? '#i-trophy' : '#i-users';
 
             const fila = document.createElement('tr');
             fila.className = 'item-cancha-lista';
+            fila.style.cursor = 'pointer';
             fila.innerHTML = `
                 <td data-label="Evento"><span class="celda-evento"><svg class="icon"><use href="${icono}"/></svg><strong>${titulo}</strong></span></td>
                 <td data-label="Cancha">${nombreCancha}</td>
@@ -784,9 +872,12 @@ class MapViewer {
                 <td data-label="Detalles"><small>${this.escaparHtml(ev.descripcion || 'Sin detalles adicionales')}</small></td>
                 <td class="col-acciones"><button type="button" class="btn btn--secondary btn--sm">Ver en mapa</button></td>
             `;
+
             fila.addEventListener('click', () => {
                 if (canchaObj) {
                     this.enfocarCancha(canchaObj, true);
+                } else {
+                    alert("⚠️ No se encontró la cancha asociada a este evento en el visor.");
                 }
             });
             cuerpo.appendChild(fila);
@@ -870,21 +961,27 @@ class MapViewer {
         const cuerpo = tabla.querySelector('tbody');
 
         eventos.forEach(ev => {
-            const canchaObj = this.datosCanchas.find(c => c.id === ev.cancha_id);
+            const canchaObj = this.datosCanchas.find(c => c.id == ev.cancha_id);
             const nombreCancha = this.escaparHtml(canchaObj?.nombre || 'Cancha de Sabaneta');
             const titulo = this.escaparHtml(ev.tipo_evento === 'Torneo' ? (ev.titulo || 'Torneo') : ev.tipo_evento);
             const icono = ev.tipo_evento === 'Torneo' ? '#i-trophy' : '#i-users';
 
             const fila = document.createElement('tr');
             fila.className = 'item-cancha-lista';
+            fila.style.cursor = 'pointer';
             fila.innerHTML = `
                 <td data-label="Evento"><span class="celda-evento"><svg class="icon"><use href="${icono}"/></svg><strong>${titulo}</strong></span></td>
                 <td data-label="Cancha">${nombreCancha}</td>
                 <td data-label="Contacto">${this.escaparHtml(ev.contacto)}</td>
                 <td class="col-acciones"><button type="button" class="btn btn--secondary btn--sm">Ver cancha</button></td>
             `;
+
             fila.addEventListener('click', () => {
-                if (canchaObj) this.enfocarCancha(canchaObj, true);
+                if (canchaObj) {
+                    this.enfocarCancha(canchaObj, true);
+                } else {
+                    alert("⚠️ No se encontró la cancha asociada a este evento en el visor.");
+                }
             });
             cuerpo.appendChild(fila);
         });
@@ -1432,7 +1529,7 @@ class MapViewer {
 
             if (this.layerControl) {
                 // Evita duplicar la capa en el control de capas de Leaflet
-                try { this.layerControl.removeLayer(this.capaGdalGroup); } catch(e){}
+                try { this.layerControl.removeLayer(this.capaGdalGroup); } catch (e) { }
                 this.layerControl.addOverlay(this.capaGdalGroup, "📊 Análisis GDAL (Backend)");
             }
         } catch (err) {
@@ -2133,7 +2230,7 @@ class MapViewer {
                 if (bannerFile) {
                     // 💡 RUTA CORREGIDA: Sin repetir el nombre del bucket al inicio para evitar el error NoSuchKey
                     const filePath = `eventos_banners/${Date.now()}_${bannerFile.name}`;
-                    
+
                     const { error: uploadError } = await this.supabase.storage
                         .from('evidencias')
                         .upload(filePath, bannerFile);
@@ -2143,7 +2240,7 @@ class MapViewer {
                     const { data: publicUrlData } = this.supabase.storage
                         .from('evidencias')
                         .getPublicUrl(filePath);
-                    
+
                     datosInsert.banner_url = publicUrlData.publicUrl;
                 }
             } else {
