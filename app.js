@@ -1132,59 +1132,8 @@ class MapViewer {
         const contenedor = document.getElementById('contenedor-lista-eventos-global');
         const contador = document.getElementById('contador-total-eventos');
         if (!contenedor) return;
-
-        contenedor.innerHTML = '';
-        if (contador) contador.innerText = eventos.length;
-
-        if (!eventos || eventos.length === 0) {
-            contenedor.innerHTML = '<p class="cargando-texto">No hay eventos o torneos que coincidan con la búsqueda.</p>';
-            return;
-        }
-
-        const tabla = document.createElement('table');
-        tabla.className = 'tabla-canchas';
-        tabla.innerHTML = `
-            <thead><tr>
-                <th scope="col">Evento / Torneo</th>
-                <th scope="col">Cancha Asociada</th>
-                <th scope="col">Organizador</th>
-                <th scope="col">Detalles</th>
-                <th scope="col" class="col-acciones"><span class="visualmente-oculto">Acciones</span></th>
-            </tr></thead><tbody></tbody>`;
-        const cuerpo = tabla.querySelector('tbody');
-
-        eventos.forEach(ev => {
-            // Uso de '==' para evitar conflictos si uno es número y el otro string
-            const canchaObj = this.datosCanchas.find(c => c.id == ev.cancha_id);
-            const nombreCancha = this.escaparHtml(canchaObj?.nombre || 'Escenario deportivo');
-            const titulo = this.escaparHtml(ev.tipo_evento === 'Torneo' ? (ev.titulo || 'Torneo') : ev.tipo_evento);
-            const icono = ev.tipo_evento === 'Torneo' ? '#i-trophy' : '#i-users';
-
-            const fila = document.createElement('tr');
-            fila.className = 'item-cancha-lista';
-            fila.style.cursor = 'pointer';
-            fila.innerHTML = `
-                <td data-label="Evento"><span class="celda-evento"><svg class="icon"><use href="${icono}"/></svg><strong>${titulo}</strong></span></td>
-                <td data-label="Cancha">${nombreCancha}</td>
-                <td data-label="Organizador">${this.escaparHtml(ev.contacto)}</td>
-                <td data-label="Detalles"><small>${this.escaparHtml(ev.descripcion || 'Sin detalles adicionales')}</small></td>
-                <td class="col-acciones"><button type="button" class="btn btn--secondary btn--sm">Ver en mapa</button></td>
-            `;
-
-            fila.addEventListener('click', () => {
-                if (canchaObj) {
-                    this.enfocarCancha(canchaObj, true);
-                } else {
-                    window.mapApp.toast("⚠️ No se encontró la cancha asociada a este evento en el visor.");
-                }
-            });
-            cuerpo.appendChild(fila);
-        });
-
-        const envoltorio = document.createElement('div');
-        envoltorio.className = 'tabla-wrap';
-        envoltorio.appendChild(tabla);
-        contenedor.appendChild(envoltorio);
+        if (contador) contador.innerText = (eventos || []).length;
+        this.construirTarjetasEventos(contenedor, eventos, 'No hay eventos o torneos que coincidan con la búsqueda.');
     }
 
     aplicarFiltrosGlobales() {
@@ -1242,52 +1191,128 @@ class MapViewer {
     renderizarListaEventosEspectador(eventos) {
         const contenedor = document.getElementById('contenedor-lista-canchas');
         if (!contenedor) return;
-        contenedor.innerHTML = '';
+        this.construirTarjetasEventos(contenedor, eventos, 'No hay eventos próximos en este momento.');
+    }
 
+    // Formatea fechas de eventos (acepta date o datetime)
+    formatearFechaEvento(valor) {
+        if (!valor) return '';
+        // Las fechas sin hora (YYYY-MM-DD) se leen como locales para no restar un día por zona horaria
+        const soloFecha = /^\d{4}-\d{2}-\d{2}$/.test(String(valor));
+        const d = soloFecha ? new Date(String(valor) + 'T00:00:00') : new Date(valor);
+        if (isNaN(d)) return '';
+        const conHora = String(valor).includes('T') || String(valor).includes(':');
+        const opts = { day: 'numeric', month: 'short' };
+        let txt = d.toLocaleDateString('es-CO', opts).replace('.', '');
+        if (conHora) txt += ' · ' + d.toLocaleTimeString('es-CO', { hour: 'numeric', minute: '2-digit' });
+        return txt;
+    }
+
+    // Tarjetas de eventos con el mismo formato de las canchas
+    construirTarjetasEventos(contenedor, eventos, textoVacio) {
+        contenedor.innerHTML = '';
         if (!eventos || eventos.length === 0) {
-            contenedor.innerHTML = '<p class="cargando-texto">No hay eventos próximos en este momento.</p>';
+            contenedor.innerHTML = `<p class="cargando-texto">${this.escaparHtml(textoVacio)}</p>`;
             return;
         }
 
-        const tabla = document.createElement('table');
-        tabla.className = 'tabla-canchas';
-        tabla.innerHTML = `
-            <thead><tr>
-                <th scope="col">Evento</th><th scope="col">Cancha</th><th scope="col">Contacto</th>
-                <th scope="col" class="col-acciones"><span class="visualmente-oculto">Acciones</span></th>
-            </tr></thead><tbody></tbody>`;
-        const cuerpo = tabla.querySelector('tbody');
+        const tipos = {
+            'Torneo': { clase: 'evt--torneo', icono: '#i-trophy', etiqueta: 'Torneo' },
+            'Partido Recreativo': { clase: 'evt--recreativo', icono: '#i-users', etiqueta: 'Partido recreativo' },
+            'Reto / Apostado': { clase: 'evt--reto', icono: '#i-target', etiqueta: 'Reto' }
+        };
+
+        const rejilla = document.createElement('div');
+        rejilla.className = 'cards-canchas cards-eventos';
 
         eventos.forEach(ev => {
-            const canchaObj = this.datosCanchas.find(c => c.id == ev.cancha_id);
-            const nombreCancha = this.escaparHtml(canchaObj?.nombre || 'Cancha de Sabaneta');
-            const titulo = this.escaparHtml(ev.tipo_evento === 'Torneo' ? (ev.titulo || 'Torneo') : ev.tipo_evento);
-            const icono = ev.tipo_evento === 'Torneo' ? '#i-trophy' : '#i-users';
+            const t = tipos[ev.tipo_evento] || { clase: 'evt--recreativo', icono: '#i-users', etiqueta: ev.tipo_evento || 'Evento' };
+            const canchaObj = (this.datosCanchas || []).find(c => c.id == ev.cancha_id);
+            const nombreCancha = this.escaparHtml(canchaObj?.nombre || 'Escenario deportivo');
+            const barrio = this.escaparHtml(canchaObj?.barrio || '');
+            const titulo = this.escaparHtml(ev.tipo_evento === 'Torneo' ? (ev.titulo || 'Torneo') : (ev.titulo || t.etiqueta));
+            const esTorneo = ev.tipo_evento === 'Torneo';
 
-            const fila = document.createElement('tr');
-            fila.className = 'item-cancha-lista';
-            fila.style.cursor = 'pointer';
-            fila.innerHTML = `
-                <td data-label="Evento"><span class="celda-evento"><svg class="icon"><use href="${icono}"/></svg><strong>${titulo}</strong></span></td>
-                <td data-label="Cancha">${nombreCancha}</td>
-                <td data-label="Contacto">${this.escaparHtml(ev.contacto)}</td>
-                <td class="col-acciones"><button type="button" class="btn btn--secondary btn--sm">Ver cancha</button></td>
-            `;
+            let cuando = '';
+            if (esTorneo && ev.fecha_inicio) {
+                cuando = this.formatearFechaEvento(ev.fecha_inicio);
+                if (ev.fecha_fin && ev.fecha_fin !== ev.fecha_inicio) cuando += ' → ' + this.formatearFechaEvento(ev.fecha_fin);
+            } else if (ev.fecha_hora) {
+                cuando = this.formatearFechaEvento(ev.fecha_hora);
+            }
 
-            fila.addEventListener('click', () => {
-                if (canchaObj) {
-                    this.enfocarCancha(canchaObj, true);
-                } else {
-                    window.mapApp.toast("⚠️ No se encontró la cancha asociada a este evento en el visor.");
-                }
+            const chips = [];
+            if (esTorneo) {
+                if (ev.cupos_equipos) chips.push(`${Number(ev.cupos_equipos)} cupos`);
+                if (ev.tiene_costo_inscripcion) chips.push(`Inscripción $${Number(ev.costo_inscripcion || 0).toLocaleString('es-CO')}`);
+                else chips.push('Inscripción gratis');
+                if (ev.tiene_premio) chips.push('🏆 Con premio' + (ev.valor_premio ? ': ' + ev.valor_premio : ''));
+            } else {
+                if (ev.formato_partido) chips.push(ev.formato_partido);
+                if (ev.necesita_rival) chips.push('Busca rival');
+                if (ev.faltan_jugadores) chips.push(`Faltan ${Number(ev.jugadores_faltantes || 0)} jugadores`);
+                if (ev.tipo_evento === 'Reto / Apostado' && ev.monto_apuesta) chips.push(`Apuesta $${Number(ev.monto_apuesta).toLocaleString('es-CO')}`);
+            }
+            const chipsHtml = chips.map(x => `<span class="evt-chip">${this.escaparHtml(x)}</span>`).join('');
+
+            const banner = ev.banner_url
+                ? `<img src="${this.escaparHtml(ev.banner_url)}" alt="Banner de ${titulo}" loading="lazy" onerror="this.remove()">`
+                : '';
+
+            const card = document.createElement('article');
+            card.className = `cancha-card evento-card ${t.clase}`;
+            card.tabIndex = 0;
+            card.innerHTML = `
+                <div class="cancha-card__img">
+                    <span class="cancha-card__cancha" aria-hidden="true"></span>
+                    <span class="evento-card__icono" aria-hidden="true"><svg class="icon"><use href="${t.icono}"/></svg></span>
+                    ${banner}
+                    <span class="cancha-card__tag">${this.escaparHtml(t.etiqueta)}</span>
+                    ${cuando ? `<span class="evento-card__fecha">${this.escaparHtml(cuando)}</span>` : ''}
+                </div>
+                <div class="cancha-card__cuerpo">
+                    <span class="cancha-card__kicker">${barrio ? barrio : 'Sabaneta'}</span>
+                    <h3 class="cancha-card__nombre">${titulo}</h3>
+                    <p class="cancha-card__barrio"><svg class="icon"><use href="#i-pin"/></svg>${nombreCancha}</p>
+                    ${ev.descripcion ? `<p class="evento-card__desc">${this.escaparHtml(ev.descripcion)}</p>` : ''}
+                    ${chipsHtml ? `<div class="evt-chips">${chipsHtml}</div>` : ''}
+                    <div class="cancha-card__meta"><span class="sup"><svg class="icon"><use href="#i-users"/></svg>&nbsp;${this.escaparHtml(ev.contacto || 'Sin contacto')}</span></div>
+                    <div class="cancha-card__acciones">
+                        <button type="button" class="btn btn--primary btn--sm" data-locate><svg class="icon"><use href="#i-pin"/></svg>Ver en el mapa</button>
+                    </div>
+                </div>`;
+
+            card.addEventListener('click', () => this.enfocarCanchaPorId(ev.cancha_id, true));
+            card.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && e.target === card) this.enfocarCanchaPorId(ev.cancha_id, true);
             });
-            cuerpo.appendChild(fila);
+            rejilla.appendChild(card);
         });
 
-        const envoltorio = document.createElement('div');
-        envoltorio.className = 'tabla-wrap';
-        envoltorio.appendChild(tabla);
-        contenedor.appendChild(envoltorio);
+        contenedor.appendChild(rejilla);
+    }
+
+    // Celebración de gol al publicar un evento
+    animacionGol(titulo = '¡GOOOL!', subtitulo = 'Tu evento ya está publicado') {
+        document.getElementById('gol-overlay')?.remove();
+        const ov = document.createElement('div');
+        ov.id = 'gol-overlay';
+        ov.setAttribute('role', 'status');
+        const confeti = Array.from({ length: 28 }, (_, i) =>
+            `<i style="--x:${(i * 37) % 100}%;--d:${(i % 7) * 0.12}s;--c:${['#f0c419', '#1f7a4d', '#ffffff', '#10b981'][i % 4]};--r:${(i * 53) % 360}deg"></i>`).join('');
+        ov.innerHTML = `
+            <div class="gol-escena">
+                <div class="gol-confeti">${confeti}</div>
+                <div class="gol-arco"><span class="gol-red"></span></div>
+                <span class="gol-balon"></span>
+                <span class="gol-sombra"></span>
+                <h2 class="gol-titulo">${this.escaparHtml(titulo)}</h2>
+                <p class="gol-sub">${this.escaparHtml(subtitulo)}</p>
+            </div>`;
+        document.body.appendChild(ov);
+        const cerrar = () => { ov.classList.add('gol-salida'); setTimeout(() => ov.remove(), 400); };
+        ov.addEventListener('click', cerrar);
+        setTimeout(cerrar, 3200);
     }
 
     actualizarEstadisticas(canchasVisibles) {
@@ -1374,6 +1399,12 @@ class MapViewer {
         // Si el panel de administración está abierto, mantiene su listado al día
         if (document.getElementById('admin-lista-canchas')) this.renderizarListaCanchasAdmin();
 
+        // Los eventos pudieron dibujarse antes que las canchas: se refrescan para resolver nombres
+        if (this.datosEventos && this.datosEventos.length) {
+            const bus = document.getElementById('buscador-eventos');
+            if (!bus || !bus.value.trim()) this.renderizarListaEventosGlobal(this.datosEventos);
+        }
+
         setTimeout(() => this.map.invalidateSize(), 100);
     }
 
@@ -1403,10 +1434,43 @@ class MapViewer {
     // Lleva la vista al mapa, vuela hasta la cancha y (opcionalmente) abre su detalle
     enfocarCancha(cancha, abrirDetalle = true) {
         const coords = this.obtenerCoordenadasGeom(cancha?.geometry);
-        if (!coords) return;
+        if (!coords) {
+            this.toast('⚠️ Esta cancha no tiene ubicación registrada en el mapa.');
+            return;
+        }
         this.irAlMapa();
         this.map.flyTo([coords.lat, coords.lng], 18, { duration: 1.2 });
         if (abrirDetalle) setTimeout(() => this.abrirModalCancha(cancha), 600);
+    }
+
+    // Busca la cancha en el momento del clic (no al dibujar la lista) para evitar datos desactualizados
+    async enfocarCanchaPorId(id, abrirDetalle = true) {
+        if (id === null || id === undefined || id === '') {
+            this.toast('⚠️ Este evento no tiene una cancha asociada.');
+            return;
+        }
+        try {
+            if (!this.datosCanchas || this.datosCanchas.length === 0) await this.cargarCanchas();
+        } catch (e) { console.error(e); }
+        let cancha = (this.datosCanchas || []).find(c => c.id == id);
+        if (!cancha) {
+            // Una recarga por si la cancha se creó después de abrir el visor
+            try { await this.cargarCanchas(); } catch (e) { console.error(e); }
+            cancha = (this.datosCanchas || []).find(c => c.id == id);
+        }
+        if (!cancha) {
+            this.toast('⚠️ La cancha asociada a este evento ya no existe en el visor.');
+            return;
+        }
+        this.enfocarCancha(cancha, abrirDetalle);
+    }
+
+    // Miniatura del banner de un torneo (o ícono si no hay imagen)
+    miniaturaBanner(ev, icono) {
+        const url = ev && ev.banner_url ? this.escaparHtml(ev.banner_url) : '';
+        const fallback = `<svg class="icon"><use href="${icono}"/></svg>`;
+        if (!url) return fallback;
+        return `<span class="banner-mini"><img src="${url}" alt="Banner del torneo" loading="lazy" onerror="this.parentNode.outerHTML='<svg class=&quot;icon&quot;><use href=&quot;${icono}&quot;/></svg>'"></span>`;
     }
 
     ordenarTabla(campo) {
@@ -1426,86 +1490,63 @@ class MapViewer {
             return;
         }
 
-        const orden = this.ordenTabla || { campo: null, dir: 1 };
-        let filas = [...canchas];
-        if (orden.campo) {
-            const valor = (c) => {
-                if (orden.campo === 'nombre') return (c.nombre || '').toLowerCase();
-                if (orden.campo === 'superficie') return this.infoSuperficie(c.surface).label.toLowerCase();
-                return c.promedio_estrellas || 0;
-            };
-            filas.sort((a, b) => {
-                const va = valor(a), vb = valor(b);
-                return (va < vb ? -1 : va > vb ? 1 : 0) * orden.dir;
-            });
-        }
+        const rejilla = document.createElement('div');
+        rejilla.className = 'cards-canchas';
 
-        const cabecera = (campo, texto) => {
-            const activo = orden.campo === campo;
-            const sentido = activo ? (orden.dir === 1 ? 'ascending' : 'descending') : 'none';
-            const flecha = activo ? (orden.dir === 1 ? '↑' : '↓') : '';
-            return `<th scope="col" aria-sort="${sentido}"><button type="button" class="th-orden" data-orden="${campo}">${texto}<span class="th-flecha">${flecha}</span></button></th>`;
-        };
-
-        const tabla = document.createElement('table');
-        tabla.className = 'tabla-canchas';
-        tabla.innerHTML = `
-            <thead><tr>
-                ${cabecera('nombre', 'Cancha')}
-                ${cabecera('superficie', 'Superficie')}
-                ${cabecera('estrellas', 'Calificación')}
-                <th scope="col" class="col-acciones"><span class="visualmente-oculto">Acciones</span></th>
-            </tr></thead>
-            <tbody></tbody>
-        `;
-        tabla.querySelectorAll('[data-orden]').forEach(b => b.addEventListener('click', () => this.ordenarTabla(b.dataset.orden)));
-
-        const cuerpo = tabla.querySelector('tbody');
-        filas.forEach(c => {
+        canchas.forEach((c, i) => {
             const esFav = this.favoritos.includes(c.id);
             const nombre = this.escaparHtml(c.nombre || 'Cancha de fútbol');
             const barrio = this.escaparHtml(c.barrio || 'Sin barrio');
             const sup = this.infoSuperficie(c.surface);
-            const imagen = c.imagen_url ? `<img src="${this.escaparHtml(c.imagen_url)}" alt="" loading="lazy" onerror="this.remove()">` : '';
+            const numero = String(i + 1).padStart(2, '0');
+            const nEventos = (this.datosEventos || []).filter(ev => ev.cancha_id == c.id).length;
+            const imagen = c.imagen_url ? `<img src="${this.escaparHtml(c.imagen_url)}" alt="Foto de ${nombre}" loading="lazy" onerror="this.remove()">` : '';
             const calificacion = c.promedio_estrellas > 0
                 ? `<span class="nota"><svg class="icon"><use href="#i-star"/></svg><b>${Number(c.promedio_estrellas).toFixed(1)}</b></span>`
                 : '<span class="nota nota--vacia">Sin calificar</span>';
+            const insignia = nEventos > 0
+                ? `<span class="cancha-card__evt"><svg class="icon"><use href="#i-trophy"/></svg>${nEventos} ${nEventos === 1 ? 'evento' : 'eventos'}</span>`
+                : '';
 
-            const fila = document.createElement('tr');
-            fila.className = 'item-cancha-lista';
-            fila.tabIndex = 0;
-            fila.innerHTML = `
-                <td data-label="Cancha">
-                    <div class="celda-cancha">
-                        <span class="miniatura">${imagen}</span>
-                        <span class="celda-cancha__texto"><strong>${nombre}</strong><small><svg class="icon"><use href="#i-pin"/></svg>${barrio}</small></span>
+            const card = document.createElement('article');
+            card.className = 'cancha-card item-cancha-lista';
+            card.tabIndex = 0;
+            card.style.setProperty('--acento', sup.color);
+            card.innerHTML = `
+                <div class="cancha-card__img">
+                    <span class="cancha-card__cancha" aria-hidden="true"></span>
+                    ${imagen}
+                    <span class="cancha-card__tag">${this.escaparHtml(sup.label)}</span>
+                    <button type="button" class="cancha-card__fav" data-fav aria-pressed="${esFav}" aria-label="${esFav ? 'Quitar de favoritas' : 'Marcar como favorita'}" title="Favorita"><svg class="icon"><use href="#i-star"/></svg></button>
+                </div>
+                <div class="cancha-card__cuerpo">
+                    <span class="cancha-card__kicker">${numero} / ${barrio}</span>
+                    <h3 class="cancha-card__nombre">${nombre}</h3>
+                    <p class="cancha-card__barrio"><svg class="icon"><use href="#i-pin"/></svg>${barrio}</p>
+                    <div class="cancha-card__meta">
+                        <span class="sup"><i style="--dot:${sup.color}"></i>${this.escaparHtml(sup.label)}</span>
+                        ${calificacion}
                     </div>
-                </td>
-                <td data-label="Superficie"><span class="sup"><i style="--dot:${sup.color}"></i>${this.escaparHtml(sup.label)}</span></td>
-                <td data-label="Calificación">${calificacion}</td>
-                <td class="col-acciones">
-                    <button type="button" class="icon-btn fav-btn" data-fav aria-pressed="${esFav}" aria-label="${esFav ? 'Quitar de favoritas' : 'Marcar como favorita'}" title="Favorita"><svg class="icon"><use href="#i-star"/></svg></button>
-                    <button type="button" class="icon-btn" data-locate aria-label="Ver ${nombre} en el mapa" title="Ver en el mapa"><svg class="icon"><use href="#i-pin"/></svg></button>
-                    <button type="button" class="btn btn--secondary btn--sm" data-ver>Detalles</button>
-                </td>
+                    ${insignia}
+                    <div class="cancha-card__acciones">
+                        <button type="button" class="btn btn--primary btn--sm" data-locate><svg class="icon"><use href="#i-pin"/></svg>Ver en el mapa</button>
+                        <button type="button" class="btn btn--secondary btn--sm" data-ver>Detalles</button>
+                    </div>
+                </div>
             `;
 
-            const accion = (e) => {
-                if (e.target.closest('[data-fav]')) this.toggleFavorito(c.id);
-                else if (e.target.closest('[data-locate]')) this.enfocarCancha(c, false);
-                else this.enfocarCancha(c, true);
-            };
-            fila.addEventListener('click', accion);
-            fila.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter' && e.target === fila) this.enfocarCancha(c, true);
+            card.addEventListener('click', (e) => {
+                if (e.target.closest('[data-fav]')) { this.toggleFavorito(c.id); return; }
+                if (e.target.closest('[data-locate]')) { this.enfocarCancha(c, false); return; }
+                this.enfocarCancha(c, true);
             });
-            cuerpo.appendChild(fila);
+            card.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && e.target === card) this.enfocarCancha(c, true);
+            });
+            rejilla.appendChild(card);
         });
 
-        const envoltorio = document.createElement('div');
-        envoltorio.className = 'tabla-wrap';
-        envoltorio.appendChild(tabla);
-        contenedor.appendChild(envoltorio);
+        contenedor.appendChild(rejilla);
     }
 
     obtenerCoordenadasGeom(geom) {
@@ -2419,7 +2460,7 @@ class MapViewer {
             const div = document.createElement('div');
             div.className = 'row-card row-card--block';
 
-            let bannerHtml = ev.banner_url ? `<img src="${ev.banner_url}" alt="Banner Torneo" style="width: 100%; height: 110px; object-fit: cover; border-radius: 6px; margin-bottom: 8px;" />` : '';
+            let bannerHtml = ev.banner_url ? `<img src="${this.escaparHtml(ev.banner_url)}" alt="Banner Torneo" loading="lazy" onerror="this.remove()" style="width: 100%; height: 110px; object-fit: cover; border-radius: 6px; margin-bottom: 8px;" />` : '';
             let detalleContenido = '';
             let tituloMostrar = '';
             let botonesHTML = `<input type="text" id="contacto-inscripcion-${ev.id}" placeholder="Tu contacto / Teléfono" style="padding: 4px; font-size: 0.8rem; border-radius: 4px; border: 1px solid #475569; background: #1e293b; color: white; width: 130px;" />`;
@@ -2534,13 +2575,19 @@ class MapViewer {
                 const bannerFile = document.getElementById('evento-banner-file').files[0];
                 if (bannerFile) {
                     // Ruta sin repetir el nombre del bucket al inicio para evitar el error NoSuchKey
-                    const filePath = `eventos_banners/${Date.now()}_${bannerFile.name}`;
+                    const nombreSeguro = bannerFile.name
+                        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+                        .replace(/[^a-zA-Z0-9._-]+/g, '_');
+                    const filePath = `eventos_banners/${Date.now()}_${nombreSeguro}`;
 
                     const { error: uploadError } = await this.supabase.storage
                         .from('evidencias')
-                        .upload(filePath, bannerFile);
+                        .upload(filePath, bannerFile, { contentType: bannerFile.type || 'image/jpeg', upsert: false });
 
-                    if (uploadError) throw uploadError;
+                    if (uploadError) {
+                        uploadError.paso = 'subir el banner al Storage';
+                        throw uploadError;
+                    }
 
                     const { data: publicUrlData } = this.supabase.storage
                         .from('evidencias')
@@ -2561,10 +2608,14 @@ class MapViewer {
             }
 
             const { error } = await this.supabase.from('eventos').insert([datosInsert]);
-            if (error) throw error;
+            if (error) {
+                error.paso = 'guardar el evento en la base de datos';
+                throw error;
+            }
 
             msgEl.innerText = '✅ ¡Publicado con éxito!';
             msgEl.style.color = '#34d399';
+            this.animacionGol('¡GOOOL!', tipoEvento === 'Torneo' ? 'Tu torneo ya está publicado' : 'Tu evento ya está publicado');
 
             document.getElementById('form-crear-evento').reset();
             document.getElementById('form-crear-evento').classList.add('oculto');
@@ -2573,7 +2624,7 @@ class MapViewer {
             await this.cargarEventosCancha(this.canchaSeleccionadaId);
         } catch (err) {
             console.error(err);
-            msgEl.innerText = '❌ Error al guardar el evento.';
+            msgEl.innerText = `❌ Error al ${err.paso || 'guardar el evento'}: ${err.message || 'desconocido'}`;
             msgEl.style.color = '#ef4444';
         }
     }
