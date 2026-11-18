@@ -15,10 +15,26 @@
 }
 
 /* ---------- Entrada del panel ---------- */
-#admin-modal-overlay:not(.oculto) { animation: ga-fondo .25s ease-out; }
-#admin-modal-overlay:not(.oculto) .modal-content { animation: ga-entra .42s cubic-bezier(.2, .9, .25, 1.05); }
-@keyframes ga-fondo { from { opacity: 0; } }
-@keyframes ga-entra { from { opacity: 0; transform: translateY(26px) scale(.965); } }
+#admin-modal-overlay:not(.oculto) {
+    animation: ga-fondo .25s ease-out;
+}
+
+#admin-modal-overlay:not(.oculto) .modal-content {
+    animation: ga-entra .42s cubic-bezier(.2, .9, .25, 1.05);
+}
+
+@keyframes ga-fondo {
+    from {
+        opacity: 0;
+    }
+}
+
+@keyframes ga-entra {
+    from {
+        opacity: 0;
+        transform: translateY(26px) scale(.965);
+    }
+}
 
 #admin-modal-overlay .modal-content {
     padding-top: 0;
@@ -29,291 +45,958 @@
 
 /* ---------- Cabecera tipo marcador / cancha ---------- */
 #admin-modal-overlay .modal-content::before {
-    content: ""; position: absolute; left: 0; right: 0; top: 0; height: 132px; z-index: 0;
-    border-radius: 16px 16px 0 0; pointer-events: none;
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    height: 132px;
+    z-index: 0;
+    border-radius: 16px 16px 0 0;
+    pointer-events: none;
     background:
         url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 700 132' fill='none' stroke='%23ffffff' stroke-opacity='.13' stroke-width='1.6'%3E%3Crect x='14' y='-30' width='672' height='190' rx='8'/%3E%3Cpath d='M350 -30V160'/%3E%3Ccircle cx='350' cy='66' r='46'/%3E%3Cpath d='M14 6H92V126H14M686 6H608V126H686'/%3E%3C/svg%3E") center / cover no-repeat,
         linear-gradient(115deg, var(--ga-deep) 10%, var(--ga-deep-2) 55%, #14513f 100%);
     border-bottom: 3px solid var(--ga-gold);
 }
+
 /* haz de luz que recorre la cabecera */
 #admin-modal-overlay .modal-content::after {
-    content: ""; position: absolute; left: 0; right: 0; top: 0; height: 132px; z-index: 0;
-    border-radius: 16px 16px 0 0; pointer-events: none;
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    height: 132px;
+    z-index: 0;
+    border-radius: 16px 16px 0 0;
+    pointer-events: none;
     background: linear-gradient(105deg, transparent 35%, rgba(255, 255, 255, .10) 50%, transparent 65%);
-    background-size: 250% 100%; animation: ga-haz 6s ease-in-out infinite;
+    background-size: 250% 100%;
+    animation: ga-haz 6s ease-in-out infinite;
 }
-@keyframes ga-haz { 0% { background-position: 130% 0; } 60%, 100% { background-position: -80% 0; } }
+
+@keyframes ga-haz {
+    0% {
+        background-position: 130% 0;
+    }
+
+    60%,
+    100% {
+        background-position: -80% 0;
+    }
+}
 
 #admin-modal-overlay .modal-titulo,
-#admin-modal-overlay .modal-subtexto:first-of-type { position: relative; z-index: 1; }
-#admin-modal-overlay .modal-titulo {
-    margin-top: 0; padding-top: 26px; color: #fff; font-size: 1.7rem; letter-spacing: -.01em;
-    display: flex; align-items: center; gap: 12px;
+#admin-modal-overlay .modal-subtexto:first-of-type {
+    position: relative;
+    z-index: 1;
 }
+
+#admin-modal-overlay .modal-titulo {
+    margin-top: 0;
+    padding-top: 26px;
+    color: #fff;
+    font-size: 1.7rem;
+    letter-spacing: -.01em;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
 #admin-modal-overlay .modal-titulo::before {
-    content: ""; flex: none; width: 34px; height: 34px; border-radius: 10px;
+    content: "";
+    flex: none;
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
     background: rgba(255, 255, 255, .12) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23f5c518' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z'/%3E%3C/svg%3E") center / 20px no-repeat;
     border: 1px solid var(--ga-line);
 }
-#admin-modal-overlay .modal-subtexto:first-of-type { margin: 6px 0 38px; color: #a9c7bb; }
+
+#admin-modal-overlay .modal-subtexto:first-of-type {
+    margin: 6px 0 38px;
+    color: #a9c7bb;
+}
+
 #admin-modal-overlay .modal-cerrar {
-    top: 16px; right: 16px; background: rgba(255, 255, 255, .14); color: #fff; z-index: 6;
+    top: 16px;
+    right: 16px;
+    background: rgba(255, 255, 255, .14);
+    color: #fff;
+    z-index: 6;
     transition: transform .25s, background .2s;
 }
-#admin-modal-overlay .modal-cerrar:hover { background: #fff; color: var(--ga-deep); transform: rotate(90deg); }
+
+#admin-modal-overlay .modal-cerrar:hover {
+    background: #fff;
+    color: var(--ga-deep);
+    transform: rotate(90deg);
+}
 
 /* ---------- Tarjeta del motor GIS ---------- */
 .admin-card--gis {
-    position: relative; overflow: hidden; padding: 20px 22px; margin: -14px 0 20px; z-index: 2;
-    border: 1px solid #1d5a47; border-radius: 14px; color: #e5f3ec;
+    position: relative;
+    overflow: hidden;
+    padding: 20px 22px;
+    margin: -14px 0 20px;
+    z-index: 2;
+    border: 1px solid #1d5a47;
+    border-radius: 14px;
+    color: #e5f3ec;
     background: linear-gradient(135deg, #0d2a23 0%, #14513f 100%);
     box-shadow: 0 14px 34px rgba(11, 36, 29, .28), inset 0 1px 0 rgba(255, 255, 255, .08);
 }
-.gis-card__radar { position: absolute; right: -46px; top: -46px; width: 230px; height: 230px; pointer-events: none; }
-.gis-card__radar i {
-    position: absolute; inset: 0; border-radius: 50%; border: 1.5px solid rgba(52, 211, 153, .55);
-    animation: ga-onda 4.5s ease-out infinite; opacity: 0;
+
+.gis-card__radar {
+    position: absolute;
+    right: -46px;
+    top: -46px;
+    width: 230px;
+    height: 230px;
+    pointer-events: none;
 }
-.gis-card__radar i:nth-child(2) { animation-delay: 1.5s; }
-.gis-card__radar i:nth-child(3) { animation-delay: 3s; }
+
+.gis-card__radar i {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    border: 1.5px solid rgba(52, 211, 153, .55);
+    animation: ga-onda 4.5s ease-out infinite;
+    opacity: 0;
+}
+
+.gis-card__radar i:nth-child(2) {
+    animation-delay: 1.5s;
+}
+
+.gis-card__radar i:nth-child(3) {
+    animation-delay: 3s;
+}
+
 .gis-card__radar::after {
-    content: ""; position: absolute; inset: 0; border-radius: 50%;
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
     background: conic-gradient(from 0deg, rgba(52, 211, 153, .35), transparent 28%);
-    animation: ga-gira 5s linear infinite; mask: radial-gradient(circle, #000 60%, transparent 61%);
+    animation: ga-gira 5s linear infinite;
+    mask: radial-gradient(circle, #000 60%, transparent 61%);
     -webkit-mask: radial-gradient(circle, #000 60%, transparent 61%);
 }
-@keyframes ga-onda { 0% { transform: scale(.15); opacity: .9; } 100% { transform: scale(1); opacity: 0; } }
-@keyframes ga-gira { to { transform: rotate(360deg); } }
 
-.gis-card__cuerpo { position: relative; z-index: 1; }
-.gis-card__etiqueta {
-    display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: .68rem; font-weight: 700;
-    letter-spacing: .06em; text-transform: uppercase; color: var(--ga-gold);
-    background: rgba(245, 197, 24, .12); border: 1px solid rgba(245, 197, 24, .3);
+@keyframes ga-onda {
+    0% {
+        transform: scale(.15);
+        opacity: .9;
+    }
+
+    100% {
+        transform: scale(1);
+        opacity: 0;
+    }
 }
-.admin-card--gis .gis-card__titulo { margin: 10px 0 4px; font-size: 1.3rem; color: #fff; }
-.admin-card--gis .gis-card__txt { margin: 0 0 12px; max-width: 46ch; color: #b7d3c7; font-size: .84rem; }
-.gis-leyenda { list-style: none; display: flex; flex-wrap: wrap; gap: 6px 16px; margin: 0 0 16px; font-size: .78rem; color: #d3e7de; }
-.gis-leyenda li { display: flex; align-items: center; gap: 7px; }
-.gis-leyenda i { width: 11px; height: 11px; border-radius: 50%; background: var(--c); box-shadow: 0 0 0 3px color-mix(in srgb, var(--c) 28%, transparent); }
-.gis-card__sello { display: block; margin-top: 10px; color: #8fb3a4; font-size: .74rem; text-align: center; }
+
+@keyframes ga-gira {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.gis-card__cuerpo {
+    position: relative;
+    z-index: 1;
+}
+
+.gis-card__etiqueta {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: .68rem;
+    font-weight: 700;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--ga-gold);
+    background: rgba(245, 197, 24, .12);
+    border: 1px solid rgba(245, 197, 24, .3);
+}
+
+.admin-card--gis .gis-card__titulo {
+    margin: 10px 0 4px;
+    font-size: 1.3rem;
+    color: #fff;
+}
+
+.admin-card--gis .gis-card__txt {
+    margin: 0 0 12px;
+    max-width: 46ch;
+    color: #b7d3c7;
+    font-size: .84rem;
+}
+
+.gis-leyenda {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 16px;
+    margin: 0 0 16px;
+    font-size: .78rem;
+    color: #d3e7de;
+}
+
+.gis-leyenda li {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+}
+
+.gis-leyenda i {
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+    background: var(--c);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--c) 28%, transparent);
+}
+
+.gis-card__sello {
+    display: block;
+    margin-top: 10px;
+    color: #8fb3a4;
+    font-size: .74rem;
+    text-align: center;
+}
 
 .btn--gis {
-    position: relative; overflow: hidden; color: #0b241d; font-weight: 800; letter-spacing: .01em;
-    background: linear-gradient(180deg, #ffd84d, #f5c518); border: 0;
+    position: relative;
+    overflow: hidden;
+    color: #0b241d;
+    font-weight: 800;
+    letter-spacing: .01em;
+    background: linear-gradient(180deg, #ffd84d, #f5c518);
+    border: 0;
     box-shadow: 0 6px 18px rgba(245, 197, 24, .28);
     transition: transform .15s, box-shadow .2s, filter .2s;
 }
-.btn--gis:not(:disabled):hover { transform: translateY(-2px); box-shadow: 0 10px 24px rgba(245, 197, 24, .4); }
-.btn--gis:active { transform: translateY(0); }
-.btn--gis .icon { transition: transform .5s; }
-.btn--gis:not(:disabled):hover .icon { transform: rotate(180deg); }
+
+.btn--gis:not(:disabled):hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 24px rgba(245, 197, 24, .4);
+}
+
+.btn--gis:active {
+    transform: translateY(0);
+}
+
+.btn--gis .icon {
+    transition: transform .5s;
+}
+
+.btn--gis:not(:disabled):hover .icon {
+    transform: rotate(180deg);
+}
+
 .btn--gis::after {
-    content: ""; position: absolute; inset: 0; transform: translateX(-120%);
+    content: "";
+    position: absolute;
+    inset: 0;
+    transform: translateX(-120%);
     background: linear-gradient(100deg, transparent 30%, rgba(255, 255, 255, .55) 50%, transparent 70%);
     animation: ga-brillo 3.6s ease-in-out infinite;
 }
-@keyframes ga-brillo { 0%, 55% { transform: translateX(-120%); } 100% { transform: translateX(120%); } }
+
+@keyframes ga-brillo {
+
+    0%,
+    55% {
+        transform: translateX(-120%);
+    }
+
+    100% {
+        transform: translateX(120%);
+    }
+}
 
 /* ---------- Pestañas ---------- */
-#admin-modal-overlay .tabs { background: #e3ebe6; padding: 5px; border-radius: 12px; }
-#admin-modal-overlay .tab { position: relative; transition: color .2s, background .2s, transform .15s; }
-#admin-modal-overlay .tab:hover { transform: translateY(-1px); }
+#admin-modal-overlay .tabs {
+    background: #e3ebe6;
+    padding: 5px;
+    border-radius: 12px;
+}
+
+#admin-modal-overlay .tab {
+    position: relative;
+    transition: color .2s, background .2s, transform .15s;
+}
+
+#admin-modal-overlay .tab:hover {
+    transform: translateY(-1px);
+}
+
 #admin-modal-overlay .tab.is-active {
-    color: #fff; background: linear-gradient(135deg, #0f6b4f, #0a5039);
+    color: #fff;
+    background: linear-gradient(135deg, #0f6b4f, #0a5039);
     box-shadow: 0 6px 14px rgba(15, 107, 79, .35);
 }
 
 /* Secciones aparecen con suavidad */
-#admin-seccion-canchas:not(.oculto), #admin-seccion-eventos:not(.oculto), #admin-seccion-roles:not(.oculto) {
+#admin-seccion-canchas:not(.oculto),
+#admin-seccion-eventos:not(.oculto),
+#admin-seccion-roles:not(.oculto) {
     animation: ga-sube .4s ease-out;
 }
-@keyframes ga-sube { from { opacity: 0; transform: translateY(12px); } }
+
+@keyframes ga-sube {
+    from {
+        opacity: 0;
+        transform: translateY(12px);
+    }
+}
 
 /* ---------- Formularios y listas ---------- */
-#admin-modal-overlay .admin-h { display: flex; align-items: center; gap: 10px; }
+#admin-modal-overlay .admin-h {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
 #admin-modal-overlay .admin-h::before {
-    content: ""; width: 4px; height: 1.05em; border-radius: 3px; background: linear-gradient(var(--ga-gold), #e0a800);
+    content: "";
+    width: 4px;
+    height: 1.05em;
+    border-radius: 3px;
+    background: linear-gradient(var(--ga-gold), #e0a800);
 }
+
 #admin-modal-overlay .panel-form {
-    position: relative; overflow: hidden; background: #fff; border: 1px solid #dbe5df;
-    border-left: 4px solid var(--ga-brand); box-shadow: 0 4px 14px rgba(13, 42, 35, .05);
+    position: relative;
+    overflow: hidden;
+    background: #fff;
+    border: 1px solid #dbe5df;
+    border-left: 4px solid var(--ga-brand);
+    box-shadow: 0 4px 14px rgba(13, 42, 35, .05);
 }
+
 #admin-modal-overlay .panel-form::after {
-    content: ""; position: absolute; right: -34px; bottom: -34px; width: 130px; height: 130px; border-radius: 50%;
-    border: 2px solid rgba(15, 107, 79, .07); box-shadow: 0 0 0 16px rgba(15, 107, 79, .035); pointer-events: none;
+    content: "";
+    position: absolute;
+    right: -34px;
+    bottom: -34px;
+    width: 130px;
+    height: 130px;
+    border-radius: 50%;
+    border: 2px solid rgba(15, 107, 79, .07);
+    box-shadow: 0 0 0 16px rgba(15, 107, 79, .035);
+    pointer-events: none;
 }
-#admin-modal-overlay .input-reserva { transition: border-color .2s, box-shadow .2s, transform .15s; }
-#admin-modal-overlay .input-reserva:focus { transform: translateY(-1px); }
+
+#admin-modal-overlay .input-reserva {
+    transition: border-color .2s, box-shadow .2s, transform .15s;
+}
+
+#admin-modal-overlay .input-reserva:focus {
+    transform: translateY(-1px);
+}
+
 #admin-modal-overlay .panel-form .btn--primary {
-    background: linear-gradient(135deg, #0f8a5f, #0a5039); box-shadow: 0 6px 16px rgba(15, 107, 79, .3);
+    background: linear-gradient(135deg, #0f8a5f, #0a5039);
+    box-shadow: 0 6px 16px rgba(15, 107, 79, .3);
     transition: transform .15s, box-shadow .2s;
 }
-#admin-modal-overlay .panel-form .btn--primary:hover { transform: translateY(-2px); box-shadow: 0 10px 22px rgba(15, 107, 79, .4); }
+
+#admin-modal-overlay .panel-form .btn--primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 22px rgba(15, 107, 79, .4);
+}
 
 #admin-modal-overlay .row-card {
-    border-left: 3px solid transparent; background: #fff;
-    animation: ga-sube .35s ease-out backwards; transition: transform .18s, box-shadow .2s, border-color .2s;
+    border-left: 3px solid transparent;
+    background: #fff;
+    animation: ga-sube .35s ease-out backwards;
+    transition: transform .18s, box-shadow .2s, border-color .2s;
 }
-#admin-modal-overlay .row-card:hover { transform: translateX(4px); border-left-color: var(--ga-brand); box-shadow: 0 6px 16px rgba(13, 42, 35, .09); }
-#admin-modal-overlay .row-card:nth-child(2) { animation-delay: .05s; }
-#admin-modal-overlay .row-card:nth-child(3) { animation-delay: .10s; }
-#admin-modal-overlay .row-card:nth-child(4) { animation-delay: .15s; }
-#admin-modal-overlay .row-card:nth-child(5) { animation-delay: .20s; }
-#admin-modal-overlay .row-card:nth-child(n+6) { animation-delay: .25s; }
-#admin-modal-overlay .row-card button { transition: transform .15s, filter .2s; }
-#admin-modal-overlay .row-card button:hover { transform: scale(1.06); filter: brightness(1.08); }
+
+#admin-modal-overlay .row-card:hover {
+    transform: translateX(4px);
+    border-left-color: var(--ga-brand);
+    box-shadow: 0 6px 16px rgba(13, 42, 35, .09);
+}
+
+#admin-modal-overlay .row-card:nth-child(2) {
+    animation-delay: .05s;
+}
+
+#admin-modal-overlay .row-card:nth-child(3) {
+    animation-delay: .10s;
+}
+
+#admin-modal-overlay .row-card:nth-child(4) {
+    animation-delay: .15s;
+}
+
+#admin-modal-overlay .row-card:nth-child(5) {
+    animation-delay: .20s;
+}
+
+#admin-modal-overlay .row-card:nth-child(n+6) {
+    animation-delay: .25s;
+}
+
+#admin-modal-overlay .row-card button {
+    transition: transform .15s, filter .2s;
+}
+
+#admin-modal-overlay .row-card button:hover {
+    transform: scale(1.06);
+    filter: brightness(1.08);
+}
 
 /* ==========================================================================
    Toasts
    ========================================================================== */
 #toast-stack {
-    position: fixed; right: 22px; bottom: 22px; z-index: 40000;
-    display: flex; flex-direction: column; gap: 10px; align-items: flex-end; pointer-events: none;
+    position: fixed;
+    right: 22px;
+    bottom: 22px;
+    z-index: 40000;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    align-items: flex-end;
+    pointer-events: none;
 }
+
 .toast {
-    position: relative; overflow: hidden; pointer-events: auto; cursor: pointer;
-    display: flex; align-items: center; gap: 12px; min-width: 260px; max-width: min(380px, calc(100vw - 32px));
-    padding: 13px 18px 15px 14px; border-radius: 12px; color: #fff; font-size: .9rem; font-weight: 600;
-    background: var(--ga-deep); border: 1px solid var(--ga-line);
+    position: relative;
+    overflow: hidden;
+    pointer-events: auto;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 260px;
+    max-width: min(380px, calc(100vw - 32px));
+    padding: 13px 18px 15px 14px;
+    border-radius: 12px;
+    color: #fff;
+    font-size: .9rem;
+    font-weight: 600;
+    background: var(--ga-deep);
+    border: 1px solid var(--ga-line);
     box-shadow: 0 16px 40px rgba(0, 0, 0, .3);
     animation: ga-toast .45s cubic-bezier(.2, .9, .25, 1.1);
 }
-.toast--sale { animation: ga-toast-sale .3s ease-in forwards; }
-@keyframes ga-toast { from { opacity: 0; transform: translateX(40px) scale(.95); } }
-@keyframes ga-toast-sale { to { opacity: 0; transform: translateX(40px); } }
-.toast__ico { flex: none; display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: var(--k); color: #0b241d; }
-.toast--ok { --k: #34d399; }
-.toast--error { --k: #f87171; }
-.toast--aviso { --k: #fbbf24; }
-.toast__bar { position: absolute; left: 0; bottom: 0; height: 3px; width: 100%; background: var(--k); transform-origin: left; animation: ga-barra 4.2s linear forwards; }
-@keyframes ga-barra { to { transform: scaleX(0); } }
+
+.toast--sale {
+    animation: ga-toast-sale .3s ease-in forwards;
+}
+
+@keyframes ga-toast {
+    from {
+        opacity: 0;
+        transform: translateX(40px) scale(.95);
+    }
+}
+
+@keyframes ga-toast-sale {
+    to {
+        opacity: 0;
+        transform: translateX(40px);
+    }
+}
+
+.toast__ico {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: var(--k);
+    color: #0b241d;
+}
+
+.toast--ok {
+    --k: #34d399;
+}
+
+.toast--error {
+    --k: #f87171;
+}
+
+.toast--aviso {
+    --k: #fbbf24;
+}
+
+.toast__bar {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    height: 3px;
+    width: 100%;
+    background: var(--k);
+    transform-origin: left;
+    animation: ga-barra 4.2s linear forwards;
+}
+
+@keyframes ga-barra {
+    to {
+        transform: scaleX(0);
+    }
+}
 
 /* ==========================================================================
    Confirmación propia (reemplaza confirm())
    ========================================================================== */
 .gis-modal {
-    position: fixed; inset: 0; z-index: 36000; display: grid; place-items: center; padding: 20px;
-    background: rgba(8, 24, 19, .62); backdrop-filter: blur(4px); animation: ga-fondo .2s ease-out;
+    position: fixed;
+    inset: 0;
+    z-index: 36000;
+    display: grid;
+    place-items: center;
+    padding: 20px;
+    background: rgba(8, 24, 19, .62);
+    backdrop-filter: blur(4px);
+    animation: ga-fondo .2s ease-out;
 }
-.gis-modal--sale { opacity: 0; transition: opacity .2s; }
+
+.gis-modal--sale {
+    opacity: 0;
+    transition: opacity .2s;
+}
+
 .gis-modal__card {
-    position: relative; width: 380px; max-width: 100%; padding: 28px 26px 22px; text-align: center;
-    background: #fff; border-radius: 18px; box-shadow: 0 30px 80px rgba(0, 0, 0, .4); animation: ga-entra .35s cubic-bezier(.2, .9, .25, 1.1);
+    position: relative;
+    width: 380px;
+    max-width: 100%;
+    padding: 28px 26px 22px;
+    text-align: center;
+    background: #fff;
+    border-radius: 18px;
+    box-shadow: 0 30px 80px rgba(0, 0, 0, .4);
+    animation: ga-entra .35s cubic-bezier(.2, .9, .25, 1.1);
 }
+
 .gis-modal__tarjeta {
-    width: 56px; height: 76px; margin: 0 auto 14px; border-radius: 8px; background: #dc2626;
-    box-shadow: 0 10px 22px rgba(220, 38, 38, .4); transform: rotate(-8deg); animation: ga-tarjeta 1.8s ease-in-out infinite;
+    width: 56px;
+    height: 76px;
+    margin: 0 auto 14px;
+    border-radius: 8px;
+    background: #dc2626;
+    box-shadow: 0 10px 22px rgba(220, 38, 38, .4);
+    transform: rotate(-8deg);
+    animation: ga-tarjeta 1.8s ease-in-out infinite;
 }
-@keyframes ga-tarjeta { 50% { transform: rotate(6deg) translateY(-4px); } }
-.gis-modal__card h3 { font-size: 1.3rem; color: #11261f; }
-.gis-modal__card p { margin: 8px 0 20px; color: #3d524a; font-size: .92rem; }
-.gis-modal__acciones { display: flex; gap: 10px; }
-.gis-modal__acciones .btn { flex: 1; }
-.btn--peligro { background: #dc2626; color: #fff; }
-.btn--peligro:hover { background: #b91c1c; }
+
+@keyframes ga-tarjeta {
+    50% {
+        transform: rotate(6deg) translateY(-4px);
+    }
+}
+
+.gis-modal__card h3 {
+    font-size: 1.3rem;
+    color: #11261f;
+}
+
+.gis-modal__card p {
+    margin: 8px 0 20px;
+    color: #3d524a;
+    font-size: .92rem;
+}
+
+.gis-modal__acciones {
+    display: flex;
+    gap: 10px;
+}
+
+.gis-modal__acciones .btn {
+    flex: 1;
+}
+
+.btn--peligro {
+    background: #dc2626;
+    color: #fff;
+}
+
+.btn--peligro:hover {
+    background: #b91c1c;
+}
 
 /* ==========================================================================
    Pantalla de proceso del análisis GIS
    ========================================================================== */
 .gis-proceso {
-    position: fixed; inset: 0; z-index: 35000; display: grid; place-items: center; padding: 20px; overflow: hidden;
+    position: fixed;
+    inset: 0;
+    z-index: 35000;
+    display: grid;
+    place-items: center;
+    padding: 20px;
+    overflow: hidden;
     background:
         radial-gradient(700px 420px at 50% 40%, rgba(20, 81, 63, .75), transparent 70%),
         rgba(7, 26, 20, .94);
-    backdrop-filter: blur(6px); animation: ga-fondo .25s ease-out;
+    backdrop-filter: blur(6px);
+    animation: ga-fondo .25s ease-out;
 }
+
 .gis-proceso::before {
-    content: ""; position: absolute; inset: -20%; pointer-events: none; opacity: .55;
+    content: "";
+    position: absolute;
+    inset: -20%;
+    pointer-events: none;
+    opacity: .55;
     background:
         repeating-linear-gradient(90deg, rgba(255, 255, 255, .035) 0 80px, transparent 80px 160px);
     animation: ga-franjas 14s linear infinite;
 }
-@keyframes ga-franjas { to { transform: translateX(160px); } }
-.gis-proceso--sale { opacity: 0; transition: opacity .26s; }
+
+@keyframes ga-franjas {
+    to {
+        transform: translateX(160px);
+    }
+}
+
+.gis-proceso--sale {
+    opacity: 0;
+    transition: opacity .26s;
+}
 
 .gis-proceso__card {
-    position: relative; width: 460px; max-width: 100%; padding: 22px 26px 26px; text-align: center; color: #e5f3ec;
-    border: 1px solid var(--ga-line); border-radius: 20px; background: linear-gradient(160deg, rgba(18, 56, 45, .92), rgba(9, 32, 25, .96));
+    position: relative;
+    width: 460px;
+    max-width: 100%;
+    padding: 22px 26px 26px;
+    text-align: center;
+    color: #e5f3ec;
+    border: 1px solid var(--ga-line);
+    border-radius: 20px;
+    background: linear-gradient(160deg, rgba(18, 56, 45, .92), rgba(9, 32, 25, .96));
     box-shadow: 0 40px 100px rgba(0, 0, 0, .55), inset 0 1px 0 rgba(255, 255, 255, .08);
     animation: ga-entra .5s cubic-bezier(.2, .9, .25, 1.08);
 }
-.gis-proceso__titulo { margin-top: 6px; font-size: 1.55rem; color: #fff; }
-.gis-proceso__sub { margin: 6px auto 18px; max-width: 38ch; color: #a9c7bb; font-size: .88rem; }
+
+.gis-proceso__titulo {
+    margin-top: 6px;
+    font-size: 1.55rem;
+    color: #fff;
+}
+
+.gis-proceso__sub {
+    margin: 6px auto 18px;
+    max-width: 38ch;
+    color: #a9c7bb;
+    font-size: .88rem;
+}
 
 /* Escena: cancha + radar + balón que recorre una ruta */
-.gis-escena { width: 100%; max-width: 330px; height: auto; display: block; margin: 0 auto; overflow: visible; }
-.gis-escena__cancha rect, .gis-escena__cancha path, .gis-escena__cancha circle {
-    stroke-dasharray: 1; stroke-dashoffset: 1; animation: ga-traza 1.6s ease-out forwards;
+.gis-escena {
+    width: 100%;
+    max-width: 330px;
+    height: auto;
+    display: block;
+    margin: 0 auto;
+    overflow: visible;
 }
-.gis-escena__radar circle { transform-box: fill-box; transform-origin: center; animation: ga-onda-svg 2.8s ease-out infinite; opacity: 0; }
-.gis-escena__radar circle:nth-child(2) { animation-delay: .9s; }
-.gis-escena__radar circle:nth-child(3) { animation-delay: 1.8s; }
-@keyframes ga-onda-svg { 0% { transform: scale(.4); opacity: .9; } 100% { transform: scale(7); opacity: 0; } }
-@keyframes ga-traza { to { stroke-dashoffset: 0; } }
-.gis-escena__ruta { stroke: rgba(251, 191, 36, .55); stroke-width: 2; stroke-dasharray: 5 7; animation: ga-fluye 1s linear infinite; }
-@keyframes ga-fluye { to { stroke-dashoffset: -12; } }
-.gis-escena__balon { offset-path: path("M40 118C90 40 130 120 160 75S240 20 282 52"); animation: ga-ruta 3.2s ease-in-out infinite alternate; offset-rotate: 0deg; }
-@keyframes ga-ruta { from { offset-distance: 0%; } to { offset-distance: 100%; } }
+
+.gis-escena__cancha rect,
+.gis-escena__cancha path,
+.gis-escena__cancha circle {
+    stroke-dasharray: 1;
+    stroke-dashoffset: 1;
+    animation: ga-traza 1.6s ease-out forwards;
+}
+
+.gis-escena__radar circle {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: ga-onda-svg 2.8s ease-out infinite;
+    opacity: 0;
+}
+
+.gis-escena__radar circle:nth-child(2) {
+    animation-delay: .9s;
+}
+
+.gis-escena__radar circle:nth-child(3) {
+    animation-delay: 1.8s;
+}
+
+@keyframes ga-onda-svg {
+    0% {
+        transform: scale(.4);
+        opacity: .9;
+    }
+
+    100% {
+        transform: scale(7);
+        opacity: 0;
+    }
+}
+
+@keyframes ga-traza {
+    to {
+        stroke-dashoffset: 0;
+    }
+}
+
+.gis-escena__ruta {
+    stroke: rgba(251, 191, 36, .55);
+    stroke-width: 2;
+    stroke-dasharray: 5 7;
+    animation: ga-fluye 1s linear infinite;
+}
+
+@keyframes ga-fluye {
+    to {
+        stroke-dashoffset: -12;
+    }
+}
+
+.gis-escena__balon {
+    offset-path: path("M40 118C90 40 130 120 160 75S240 20 282 52");
+    animation: ga-ruta 3.2s ease-in-out infinite alternate;
+    offset-rotate: 0deg;
+}
+
+@keyframes ga-ruta {
+    from {
+        offset-distance: 0%;
+    }
+
+    to {
+        offset-distance: 100%;
+    }
+}
 
 /* Pasos */
-.gis-pasos { list-style: none; display: grid; gap: 8px; margin: 0 0 16px; padding: 0; text-align: left; }
-.gis-pasos li {
-    display: flex; align-items: center; gap: 12px; padding: 9px 12px; border-radius: 10px; font-size: .88rem;
-    color: #7fa396; background: rgba(255, 255, 255, .03); border: 1px solid transparent; transition: all .3s;
-}
-.gis-pasos__ico { flex: none; width: 20px; height: 20px; border-radius: 50%; border: 2px solid rgba(255, 255, 255, .2); position: relative; transition: all .3s; }
-.gis-pasos li.is-active { color: #fff; background: rgba(52, 211, 153, .1); border-color: rgba(52, 211, 153, .35); }
-.gis-pasos li.is-active .gis-pasos__ico { border-color: rgba(52, 211, 153, .25); border-top-color: #34d399; animation: ga-gira .8s linear infinite; }
-.gis-pasos li.is-done { color: #c5e3d6; }
-.gis-pasos li.is-done .gis-pasos__ico { background: #34d399; border-color: #34d399; }
-.gis-pasos li.is-done .gis-pasos__ico::after {
-    content: ""; position: absolute; left: 5px; top: 1px; width: 5px; height: 10px; border: solid #0b241d; border-width: 0 2.5px 2.5px 0; transform: rotate(45deg);
+.gis-pasos {
+    list-style: none;
+    display: grid;
+    gap: 8px;
+    margin: 0 0 16px;
+    padding: 0;
+    text-align: left;
 }
 
-.gis-barra { height: 8px; border-radius: 999px; background: rgba(255, 255, 255, .09); overflow: hidden; }
-.gis-barra span {
-    display: block; width: 0; height: 100%; border-radius: inherit; transition: width .6s cubic-bezier(.3, .8, .3, 1);
-    background: linear-gradient(90deg, #34d399, #f5c518); background-size: 200% 100%; animation: ga-barra-mov 2s linear infinite;
+.gis-pasos li {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 9px 12px;
+    border-radius: 10px;
+    font-size: .88rem;
+    color: #7fa396;
+    background: rgba(255, 255, 255, .03);
+    border: 1px solid transparent;
+    transition: all .3s;
 }
-@keyframes ga-barra-mov { to { background-position: -200% 0; } }
+
+.gis-pasos__ico {
+    flex: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 2px solid rgba(255, 255, 255, .2);
+    position: relative;
+    transition: all .3s;
+}
+
+.gis-pasos li.is-active {
+    color: #fff;
+    background: rgba(52, 211, 153, .1);
+    border-color: rgba(52, 211, 153, .35);
+}
+
+.gis-pasos li.is-active .gis-pasos__ico {
+    border-color: rgba(52, 211, 153, .25);
+    border-top-color: #34d399;
+    animation: ga-gira .8s linear infinite;
+}
+
+.gis-pasos li.is-done {
+    color: #c5e3d6;
+}
+
+.gis-pasos li.is-done .gis-pasos__ico {
+    background: #34d399;
+    border-color: #34d399;
+}
+
+.gis-pasos li.is-done .gis-pasos__ico::after {
+    content: "";
+    position: absolute;
+    left: 5px;
+    top: 1px;
+    width: 5px;
+    height: 10px;
+    border: solid #0b241d;
+    border-width: 0 2.5px 2.5px 0;
+    transform: rotate(45deg);
+}
+
+.gis-barra {
+    height: 8px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, .09);
+    overflow: hidden;
+}
+
+.gis-barra span {
+    display: block;
+    width: 0;
+    height: 100%;
+    border-radius: inherit;
+    transition: width .6s cubic-bezier(.3, .8, .3, 1);
+    background: linear-gradient(90deg, #34d399, #f5c518);
+    background-size: 200% 100%;
+    animation: ga-barra-mov 2s linear infinite;
+}
+
+@keyframes ga-barra-mov {
+    to {
+        background-position: -200% 0;
+    }
+}
 
 /* Resultado */
-.gis-resultado { margin-top: 20px; animation: ga-sube .5s ease-out; }
-.gis-kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
-.gis-kpi {
-    padding: 12px 4px 10px; border-radius: 12px; background: rgba(255, 255, 255, .06); border: 1px solid var(--ga-line);
-    border-top: 3px solid var(--k, #34d399); animation: ga-pop .5s cubic-bezier(.2, 1.2, .3, 1) backwards; animation-delay: var(--d);
+.gis-resultado {
+    margin-top: 20px;
+    animation: ga-sube .5s ease-out;
 }
-.gis-kpi b { display: block; font-family: var(--f-display, inherit); font-size: 1.8rem; line-height: 1; color: #fff; font-variant-numeric: tabular-nums; }
-.gis-kpi span { display: block; margin-top: 6px; font-size: .66rem; line-height: 1.2; color: #a9c7bb; }
-.gis-kpi--total { --k: #34d399; }
-.gis-kpi--alta { --k: #f87171; }
-.gis-kpi--media { --k: #fbbf24; }
-.gis-kpi--baja { --k: #60a5fa; }
-@keyframes ga-pop { from { opacity: 0; transform: translateY(14px) scale(.85); } }
-.gis-resultado__acciones { display: flex; gap: 10px; margin-top: 18px; }
-.gis-resultado__acciones .btn { flex: 1; }
-.gis-proceso .btn--ghost { color: #d3e7de; border-color: var(--ga-line); }
-.gis-proceso .btn--ghost:hover { background: rgba(255, 255, 255, .08); color: #fff; }
 
-.gis-proceso--ok .gis-proceso__card { border-color: rgba(52, 211, 153, .45); box-shadow: 0 40px 100px rgba(0, 0, 0, .55), 0 0 60px rgba(52, 211, 153, .18); }
-.gis-proceso--ok .gis-barra span { animation: none; background: #34d399; }
-.gis-proceso--ok .gis-pasos { display: none; }
-.gis-proceso--error .gis-proceso__card { border-color: rgba(248, 113, 113, .5); }
-.gis-proceso--error .gis-pasos li.is-active .gis-pasos__ico { animation: none; border-color: #f87171; }
-.gis-proceso--error .gis-barra span { animation: none; background: #f87171; }
+.gis-kpis {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+}
+
+.gis-kpi {
+    padding: 12px 4px 10px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, .06);
+    border: 1px solid var(--ga-line);
+    border-top: 3px solid var(--k, #34d399);
+    animation: ga-pop .5s cubic-bezier(.2, 1.2, .3, 1) backwards;
+    animation-delay: var(--d);
+}
+
+.gis-kpi b {
+    display: block;
+    font-family: var(--f-display, inherit);
+    font-size: 1.8rem;
+    line-height: 1;
+    color: #fff;
+    font-variant-numeric: tabular-nums;
+}
+
+.gis-kpi span {
+    display: block;
+    margin-top: 6px;
+    font-size: .66rem;
+    line-height: 1.2;
+    color: #a9c7bb;
+}
+
+.gis-kpi--total {
+    --k: #34d399;
+}
+
+.gis-kpi--alta {
+    --k: #f87171;
+}
+
+.gis-kpi--media {
+    --k: #fbbf24;
+}
+
+.gis-kpi--baja {
+    --k: #60a5fa;
+}
+
+@keyframes ga-pop {
+    from {
+        opacity: 0;
+        transform: translateY(14px) scale(.85);
+    }
+}
+
+.gis-resultado__acciones {
+    display: flex;
+    gap: 10px;
+    margin-top: 18px;
+}
+
+.gis-resultado__acciones .btn {
+    flex: 1;
+}
+
+.gis-proceso .btn--ghost {
+    color: #d3e7de;
+    border-color: var(--ga-line);
+}
+
+.gis-proceso .btn--ghost:hover {
+    background: rgba(255, 255, 255, .08);
+    color: #fff;
+}
+
+.gis-proceso--ok .gis-proceso__card {
+    border-color: rgba(52, 211, 153, .45);
+    box-shadow: 0 40px 100px rgba(0, 0, 0, .55), 0 0 60px rgba(52, 211, 153, .18);
+}
+
+.gis-proceso--ok .gis-barra span {
+    animation: none;
+    background: #34d399;
+}
+
+.gis-proceso--ok .gis-pasos {
+    display: none;
+}
+
+.gis-proceso--error .gis-proceso__card {
+    border-color: rgba(248, 113, 113, .5);
+}
+
+.gis-proceso--error .gis-pasos li.is-active .gis-pasos__ico {
+    animation: none;
+    border-color: #f87171;
+}
+
+.gis-proceso--error .gis-barra span {
+    animation: none;
+    background: #f87171;
+}
 
 @media (max-width: 520px) {
-    .gis-kpis { grid-template-columns: repeat(2, 1fr); }
-    #admin-modal-overlay .modal-titulo { font-size: 1.35rem; }
-    #toast-stack { left: 16px; right: 16px; align-items: stretch; }
+    .gis-kpis {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    #admin-modal-overlay .modal-titulo {
+        font-size: 1.35rem;
+    }
+
+    #toast-stack {
+        left: 16px;
+        right: 16px;
+        align-items: stretch;
+    }
 }
 
 @media (prefers-reduced-motion: reduce) {
-    #admin-modal-overlay .modal-content::after, .gis-card__radar i, .gis-card__radar::after, .btn--gis::after,
-    .gis-escena__radar circle, .gis-proceso::before, .gis-modal__tarjeta, .gis-barra span { animation: none !important; }
+
+    #admin-modal-overlay .modal-content::after,
+    .gis-card__radar i,
+    .gis-card__radar::after,
+    .btn--gis::after,
+    .gis-escena__radar circle,
+    .gis-proceso::before,
+    .gis-modal__tarjeta,
+    .gis-barra span {
+        animation: none !important;
+    }
 }
 
 /* Legibilidad de la tarjeta GIS: fondo oscuro y textos claros forzados */
@@ -322,58 +1005,368 @@
     color: #e5f3ec !important;
     margin: 0 0 20px;
 }
-#admin-modal-overlay .admin-card--gis .gis-card__titulo { color: #fff !important; }
-#admin-modal-overlay .admin-card--gis .gis-card__txt { color: #c3dcd0 !important; }
-#admin-modal-overlay .admin-card--gis .gis-leyenda { color: #e5f3ec; }
-#admin-modal-overlay .admin-card--gis .gis-card__sello { color: #a9c7bb; }
+
+#admin-modal-overlay .admin-card--gis .gis-card__titulo {
+    color: #fff !important;
+}
+
+#admin-modal-overlay .admin-card--gis .gis-card__txt {
+    color: #c3dcd0 !important;
+}
+
+#admin-modal-overlay .admin-card--gis .gis-leyenda {
+    color: #e5f3ec;
+}
+
+#admin-modal-overlay .admin-card--gis .gis-card__sello {
+    color: #a9c7bb;
+}
 
 /* ---------- Listado de canchas del admin ---------- */
-#admin-modal-overlay .tab { font-size: .84rem; padding: 9px 6px; }
-
-.admin-toolbar { display: flex; align-items: center; gap: 10px; margin: 16px 0 6px; }
-.admin-buscar {
-    flex: 1; display: flex; align-items: center; gap: 8px; height: 40px; padding: 0 12px;
-    background: #fff; border: 1px solid var(--line); border-radius: var(--r-sm);
+#admin-modal-overlay .tab {
+    font-size: .84rem;
+    padding: 9px 6px;
 }
-.admin-buscar:focus-within { border-color: var(--brand); box-shadow: 0 0 0 3px rgba(15, 107, 79, .16); }
-.admin-buscar .icon { color: var(--ink-3); }
-.admin-buscar input { flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; font-size: .9rem; }
-#admin-canchas-contador { margin: 0 0 8px; }
-#admin-lista-canchas { max-height: 420px; margin-top: 0; }
 
-.admin-cancha-row { gap: 12px; }
-.admin-cancha-row__thumb { flex: none; width: 56px; height: 40px; border-radius: 6px; overflow: hidden; background: #d9e9e0; }
-.admin-cancha-row__thumb img { display: block; width: 100%; height: 100%; object-fit: cover; }
-.admin-cancha-row__txt { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
-.admin-cancha-row__txt strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .92rem; color: var(--ink); }
-.admin-cancha-row__txt small { display: flex; align-items: center; gap: 6px; color: var(--ink-3); font-size: .78rem; }
-.admin-cancha-row__txt small i { flex: none; width: 9px; height: 9px; border-radius: 50%; background: var(--dot); }
-.admin-cancha-row__acc { flex: none; display: flex; gap: 6px; }
+.admin-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 16px 0 6px;
+}
 
-.btn--peligro-suave { background: #fff; color: #b3382d; border-color: #f0c9c5; }
-.btn--peligro-suave:hover { background: #fbe9e7; border-color: #e5a29b; }
+.admin-buscar {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    height: 40px;
+    padding: 0 12px;
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: var(--r-sm);
+}
+
+.admin-buscar:focus-within {
+    border-color: var(--brand);
+    box-shadow: 0 0 0 3px rgba(15, 107, 79, .16);
+}
+
+.admin-buscar .icon {
+    color: var(--ink-3);
+}
+
+.admin-buscar input {
+    flex: 1;
+    min-width: 0;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    font-size: .9rem;
+}
+
+#admin-canchas-contador {
+    margin: 0 0 8px;
+}
+
+#admin-lista-canchas {
+    max-height: 420px;
+    margin-top: 0;
+}
+
+.admin-cancha-row {
+    gap: 12px;
+}
+
+.admin-cancha-row__thumb {
+    flex: none;
+    width: 56px;
+    height: 40px;
+    border-radius: 6px;
+    overflow: hidden;
+    background: #d9e9e0;
+}
+
+.admin-cancha-row__thumb img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.admin-cancha-row__txt {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.admin-cancha-row__txt strong {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: .92rem;
+    color: var(--ink);
+}
+
+.admin-cancha-row__txt small {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--ink-3);
+    font-size: .78rem;
+}
+
+.admin-cancha-row__txt small i {
+    flex: none;
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: var(--dot);
+}
+
+.admin-cancha-row__acc {
+    flex: none;
+    display: flex;
+    gap: 6px;
+}
+
+.btn--peligro-suave {
+    background: #fff;
+    color: #b3382d;
+    border-color: #f0c9c5;
+}
+
+.btn--peligro-suave:hover {
+    background: #fbe9e7;
+    border-color: #e5a29b;
+}
 
 /* ---------- Formulario de cancha ---------- */
-.admin-volver { margin-top: 14px; }
-.admin-ubicacion__cab { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
-.admin-ubicacion__cab .field-label { margin: 0; }
+.admin-volver {
+    margin-top: 14px;
+}
+
+.admin-ubicacion__cab {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 8px;
+}
+
+.admin-ubicacion__cab .field-label {
+    margin: 0;
+}
+
 .admin-aviso {
-    margin-top: 10px; padding: 9px 12px; border-radius: 8px; font-size: .82rem;
-    background: #fff6dc; border: 1px solid #f1dc9a; color: #7a5a05;
+    margin-top: 10px;
+    padding: 9px 12px;
+    border-radius: 8px;
+    font-size: .82rem;
+    background: #fff6dc;
+    border: 1px solid #f1dc9a;
+    color: #7a5a05;
 }
-.admin-imagen { display: grid; gap: 10px; }
-.admin-imagen .field-label { margin: 0; }
+
+.admin-imagen {
+    display: grid;
+    gap: 10px;
+}
+
+.admin-imagen .field-label {
+    margin: 0;
+}
+
 .admin-preview {
-    height: 150px; display: grid; place-items: center; overflow: hidden; border-radius: 10px;
-    background: #e4eae6; color: var(--ink-3); font-size: .82rem; border: 1px dashed var(--line);
+    height: 150px;
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+    border-radius: 10px;
+    background: #e4eae6;
+    color: var(--ink-3);
+    font-size: .82rem;
+    border: 1px dashed var(--line);
 }
-.admin-preview img { display: block; width: 100%; height: 100%; object-fit: cover; }
-.admin-o { text-align: center; color: var(--ink-3); font-size: .78rem; }
-.admin-form-acciones { display: flex; gap: 10px; margin-top: 16px; }
-.admin-form-acciones .btn { flex: 1; }
+
+.admin-preview img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.admin-o {
+    text-align: center;
+    color: var(--ink-3);
+    font-size: .78rem;
+}
+
+.admin-form-acciones {
+    display: flex;
+    gap: 10px;
+    margin-top: 16px;
+}
+
+.admin-form-acciones .btn {
+    flex: 1;
+}
 
 @media (max-width: 520px) {
-    .admin-cancha-row { flex-wrap: wrap; }
-    .admin-cancha-row__acc { width: 100%; }
-    .admin-cancha-row__acc .btn { flex: 1; }
+    .admin-cancha-row {
+        flex-wrap: wrap;
+    }
+
+    .admin-cancha-row__acc {
+        width: 100%;
+    }
+
+    .admin-cancha-row__acc .btn {
+        flex: 1;
+    }
+}
+
+/* ==========================================================================
+   RESPONSIVE DEL PANEL DE ADMINISTRACIÓN
+   ========================================================================== */
+
+/* Pantalla de proceso GIS: si la tarjeta es más alta que la pantalla, ahora se
+   puede desplazar en vez de quedar cortada */
+.gis-proceso {
+    display: flex;
+    overflow-y: auto;
+}
+
+.gis-proceso__card {
+    margin: auto;
+}
+
+@media (max-width: 900px) {
+    #admin-lista-canchas {
+        max-height: min(420px, 55dvh);
+    }
+}
+
+@media (max-width: 640px) {
+
+    /* El panel ocupa toda la pantalla: la cabecera decorativa pierde las esquinas redondeadas */
+    #admin-modal-overlay .modal-content::before,
+    #admin-modal-overlay .modal-content::after {
+        border-radius: 0;
+    }
+
+    #admin-modal-overlay .modal-titulo {
+        font-size: 1.5rem;
+    }
+
+    #admin-modal-overlay .modal-subtexto:first-of-type {
+        font-size: .84rem;
+        margin-bottom: 34px;
+    }
+
+    /* Cuatro pestañas: se desplazan en horizontal sin comprimirse */
+    #admin-modal-overlay .tabs {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+    }
+
+    #admin-modal-overlay .tabs::-webkit-scrollbar {
+        display: none;
+    }
+
+    #admin-modal-overlay .tab {
+        flex: 0 0 auto;
+        padding: 10px 16px;
+        font-size: .9rem;
+        white-space: nowrap;
+    }
+
+    /* La tarjeta del motor GIS ocupa todo el ancho */
+    #admin-modal-overlay .admin-card--gis {
+        padding: 18px 16px;
+    }
+
+    .gis-card__radar {
+        width: 170px;
+        height: 170px;
+        right: -50px;
+        top: -50px;
+    }
+
+    .admin-ubicacion__cab {
+        flex-wrap: wrap;
+    }
+
+    .admin-form-acciones {
+        flex-direction: column-reverse;
+    }
+
+    .admin-preview {
+        height: 130px;
+    }
+
+    /* Confirmaciones y proceso GIS */
+    .gis-modal {
+        padding: 16px;
+    }
+
+    .gis-modal__card {
+        padding: 24px 18px 18px;
+    }
+
+    .gis-proceso {
+        padding: 14px;
+    }
+
+    .gis-proceso__card {
+        padding: 18px 16px 20px;
+    }
+
+    .gis-proceso__titulo {
+        font-size: 1.3rem;
+    }
+
+    .gis-resultado__acciones {
+        flex-direction: column;
+    }
+}
+
+@media (max-width: 520px) {
+    .admin-toolbar {
+        flex-wrap: wrap;
+    }
+
+    .admin-buscar {
+        flex: 1 1 100%;
+    }
+
+    #btn-admin-nueva-cancha {
+        width: 100%;
+    }
+
+    .gis-modal__acciones {
+        flex-direction: column-reverse;
+    }
+
+    #toast-stack {
+        bottom: 14px;
+    }
+}
+
+/* Teléfono en horizontal: la cabecera del panel ocupa menos */
+@media (max-height: 520px) and (orientation: landscape) {
+    #admin-modal-overlay .modal-titulo {
+        padding-top: 16px;
+    }
+
+    #admin-modal-overlay .modal-subtexto:first-of-type {
+        margin-bottom: 26px;
+    }
+
+    .gis-escena {
+        max-width: 220px;
+    }
 }

@@ -103,6 +103,7 @@ class MapViewer {
         this.cargarViasSabaneta();
         this.initControlCapasUI();
         this.initPanelesFlotantes();
+        this.initMenuMovil();
         this.cargarCapaGdalProcesada();
         this.initCargaEfectivaPorViewport();
 
@@ -527,7 +528,7 @@ class MapViewer {
         if (error) throw new Error(`No se pudo subir ${nombreArchivo}: ${error.message}`);
     }
 
-    async generarYSubirAnalisisGis(onPaso = () => {}) {
+    async generarYSubirAnalisisGis(onPaso = () => { }) {
         onPaso(0);
         const [rC, rCal, rEv, rPar] = await Promise.all([
             this.supabase.from('canchas').select('*'),
@@ -807,6 +808,43 @@ class MapViewer {
         document.addEventListener('click', () => {
             opcionesContainer.classList.remove('open');
         });
+    }
+
+    // --- Menú hamburguesa de la cabecera (tableta y móvil) ---
+    initMenuMovil() {
+        const header = document.querySelector('.app-header');
+        const boton = document.getElementById('btn-menu');
+        const nav = document.getElementById('main-nav');
+        if (!header || !boton || !nav) return;
+
+        const fijar = (abrir) => {
+            header.classList.toggle('is-menu-open', abrir);
+            boton.setAttribute('aria-expanded', String(abrir));
+            boton.setAttribute('aria-label', abrir ? 'Cerrar menú' : 'Abrir menú');
+        };
+
+        boton.addEventListener('click', (e) => {
+            e.stopPropagation();
+            fijar(!header.classList.contains('is-menu-open'));
+        });
+
+        // Al elegir una opción el menú se cierra (también "Capas GIS", que abre el panel de capas)
+        nav.querySelectorAll('.nav-link').forEach(enlace => {
+            enlace.addEventListener('click', () => fijar(false));
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.app-header')) fijar(false);
+        });
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') fijar(false);
+        });
+
+        // Si la pantalla pasa a escritorio, el menú vuelve a su estado normal
+        const mq = window.matchMedia('(min-width: 901px)');
+        const alCambiar = (e) => { if (e.matches) fijar(false); };
+        if (mq.addEventListener) mq.addEventListener('change', alCambiar);
+        else if (mq.addListener) mq.addListener(alCambiar);
     }
 
     // --- Paneles flotantes del mapa (filtros y capas) ---

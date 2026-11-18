@@ -974,47 +974,194 @@ main,
 }
 
 /* ==========================================================================
-   RESPONSIVE TABLETS Y MÓVILES (<= 900px)
+   RESPONSIVE (tableta y móvil)
+   · ≥ 901 px   escritorio: panel lateral + mapa (bloque anterior)
+   · ≤ 900 px   menú hamburguesa, buscador y botones flotantes sobre el mapa
+   · ≤ 720 px   tablas en tarjetas
+   · ≤ 640 px   paneles y modales a pantalla completa
    ========================================================================== */
-@media (max-width: 900px) {
 
-    /* Cabecera adaptable */
+/* Botón hamburguesa: oculto en escritorio */
+.menu-toggle {
+    display: none;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border: 1px solid rgba(255, 255, 255, .28);
+    border-radius: 6px;
+    background: transparent;
+    color: #fff;
+}
+
+.menu-toggle:hover,
+.app-header.is-menu-open .menu-toggle {
+    background: rgba(255, 255, 255, .1);
+}
+
+.menu-toggle__bars {
+    position: relative;
+    display: block;
+    width: 20px;
+    height: 14px;
+}
+
+.menu-toggle__bars i {
+    position: absolute;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    border-radius: 2px;
+    background: currentColor;
+    transition: transform .2s ease, opacity .15s ease, top .2s ease;
+}
+
+.menu-toggle__bars i:nth-child(1) {
+    top: 0;
+}
+
+.menu-toggle__bars i:nth-child(2) {
+    top: 6px;
+}
+
+.menu-toggle__bars i:nth-child(3) {
+    top: 12px;
+}
+
+.app-header.is-menu-open .menu-toggle__bars i:nth-child(1) {
+    top: 6px;
+    transform: rotate(45deg);
+}
+
+.app-header.is-menu-open .menu-toggle__bars i:nth-child(2) {
+    opacity: 0;
+}
+
+.app-header.is-menu-open .menu-toggle__bars i:nth-child(3) {
+    top: 6px;
+    transform: rotate(-45deg);
+}
+
+/* ---------- ≤ 900 px ---------- */
+@media (max-width: 900px) {
+    :root {
+        --header-h: 58px;
+    }
+
+    /* Cabecera: marca a la izquierda, hamburguesa a la derecha */
     .app-header {
-        height: auto;
-        min-height: 58px;
-        flex-wrap: wrap;
-        padding: 10px 16px;
+        height: 58px;
+        padding: 0 12px 0 14px;
+        gap: 10px;
+        flex-wrap: nowrap;
+    }
+
+    .app-header .brand {
+        min-width: 0;
         gap: 10px;
     }
 
-    .main-nav {
-        order: 3;
-        width: 100%;
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-        border-top: 1px solid rgba(255, 255, 255, .1);
-        padding-top: 4px;
-        gap: 2px;
+    .app-header .brand-logo {
+        width: 42px;
+        height: 42px;
     }
 
-    .nav-link {
-        padding: 8px 12px;
+    .app-header .brand-copy {
+        min-width: 0;
+    }
+
+    .app-header .brand-copy strong {
+        display: block;
+        font-size: 1.3rem;
         white-space: nowrap;
-        font-size: .9rem;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
-    .nav-link.active::after {
-        bottom: 0;
-        left: 12px;
-        right: 12px;
+    .app-header .brand-copy small,
+    .header-status {
+        display: none;
     }
 
-    /* Contenedor flotante superior en móvil */
-    .map-ui__left {
-        left: 12px;
-        right: 12px;
-        top: 12px;
+    .app-header .btn--admin {
+        padding: 7px 12px;
+        font-size: .85rem;
+        white-space: nowrap;
+    }
+
+    .menu-toggle {
+        display: inline-flex;
+    }
+
+    /* Menú desplegable bajo la cabecera */
+    .app-header .main-nav {
+        display: none;
+        position: absolute;
+        top: calc(100% + 3px);
+        left: 0;
+        right: 0;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0;
         width: auto;
+        padding: 6px 0 10px;
+        background: #0c3122;
+        border-top: 1px solid rgba(255, 255, 255, .12);
+        border-bottom: 3px solid var(--m-linea);
+        box-shadow: 0 16px 32px rgba(0, 0, 0, .4);
+        max-height: calc(100dvh - 64px);
+        overflow-y: auto;
+        animation: menu-in .18s ease-out;
+    }
+
+    .app-header.is-menu-open .main-nav,
+    .app-header.is-menu-open:has(#contenedor-btn-admin) .main-nav {
+        display: flex !important;
+    }
+
+    @keyframes menu-in {
+        from {
+            opacity: 0;
+            transform: translateY(-6px);
+        }
+    }
+
+    /* Anula las reglas de styles.css que ocultaban enlaces en pantallas chicas */
+    .app-header .main-nav .nav-link,
+    .app-header .main-nav .nav-link[data-open],
+    .app-header .main-nav .nav-link[data-section="app-footer"] {
+        display: flex;
+        padding: 15px 22px;
+        font-size: 1.05rem;
+        border-left: 4px solid transparent;
+        white-space: normal;
+    }
+
+    .app-header .main-nav .nav-link+.nav-link {
+        border-top: 1px solid rgba(255, 255, 255, .07);
+    }
+
+    .app-header .main-nav .nav-link.active {
+        background: rgba(255, 255, 255, .08);
+        border-left-color: var(--m-linea);
+    }
+
+    .app-header .main-nav .nav-link.active::after {
+        display: none;
+    }
+
+    /* El administrador sigue viendo su botón junto a la hamburguesa */
+    .header-actions:has(#contenedor-btn-admin) {
+        display: flex;
+    }
+
+    /* Mapa: buscador arriba, botón Capas a la derecha */
+    .map-ui__left {
+        top: 12px;
+        left: 12px;
+        right: auto;
+        width: min(520px, calc(100% - 24px));
         display: flex;
         flex-direction: column;
         gap: 8px;
@@ -1024,77 +1171,82 @@ main,
         width: 100%;
     }
 
-    /* Contenedor de botones superiores (Filtros y Capas juntos) */
-    .map-ui__left-actions {
-        display: flex;
-        gap: 8px;
-        width: 100%;
-    }
-
-    /* Asegurar que el botón de Capas sea visible y tenga el mismo diseño que el botón de filtros */
-    #btn-toggle-capas {
-        position: static !important;
-        transform: none !important;
-        display: inline-flex !important;
-        visibility: visible !important;
-        opacity: 1 !important;
-        flex: 1;
-        height: 46px;
-        padding: 0 16px;
-        border-radius: 5px;
-        background: var(--m-surface);
-        border: 1px solid rgba(23, 33, 28, .16);
-        box-shadow: 0 2px 8px rgba(21, 28, 25, .16);
-        font-weight: 600;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
-        color: var(--m-ink);
-        font-family: var(--m-body);
-        font-size: .95rem;
-    }
-
-    #btn-toggle-capas:hover,
-    #btn-toggle-capas[aria-expanded="true"] {
-        background: var(--m-grama-tint);
-        color: var(--m-grama-d);
-    }
-
     .map-ui__left .popover {
         width: 100%;
         max-width: none;
-        max-height: 62vh;
+        margin-top: 0;
+        max-height: calc(var(--ws-h) - 84px);
         overflow-y: auto;
     }
 
-    /* Ocultar el contenedor derecho viejo para que no flote sobre los botones de zoom de Leaflet */
+    .map-ui__left .popover__body {
+        max-height: none;
+        overflow: visible;
+    }
+
     .map-ui__right {
-        display: none !important;
+        display: flex;
+        top: 12px;
+        right: 12px;
     }
 
-    .leaflet-right {
-        bottom: 24px !important;
+    .popover--right {
+        width: min(320px, calc(100vw - 24px));
+        max-height: calc(var(--ws-h) - 84px);
+        overflow-y: auto;
     }
 
-    /* Banda KPI y tablas */
+    .popover--right .popover__body {
+        max-height: none;
+        overflow: visible;
+    }
+
+    /* Panel de ruta: ocupa el ancho libre y deja sitio a los botones de zoom */
+    .panel-info-ruta {
+        left: 12px;
+        right: 64px;
+        bottom: 16px;
+        transform: none;
+        max-width: none;
+    }
+
+    .panel-ruta-destino,
+    .panel-ruta-subtexto {
+        max-width: 100%;
+    }
+
+    .panel-ruta-info {
+        flex: 1;
+    }
+
+    /* Indicadores */
     .panel-estadisticas {
         flex-direction: column;
-        align-items: flex-start;
-        padding: 20px 16px;
-        gap: 18px;
+        align-items: stretch;
+        gap: 14px;
+        padding: 18px 16px;
+    }
+
+    .resumen__fav {
+        margin-left: 0;
     }
 
     .resumen__leyenda {
-        flex-wrap: wrap;
-        gap: 10px 16px;
+        gap: 8px 18px;
+    }
+
+    /* Listados: desplazamiento horizontal controlado en tableta */
+    .section {
+        padding-left: 20px;
+        padding-right: 20px;
     }
 
     .tabla-wrap {
         width: 100%;
         overflow-x: auto;
         -webkit-overflow-scrolling: touch;
-        border-radius: 6px;
         border: 1px solid var(--m-rule);
+        border-radius: 6px;
     }
 
     .tabla-canchas {
@@ -1102,76 +1254,163 @@ main,
         border: 0;
         border-radius: 0;
     }
+
+    #eventos .tabla-canchas {
+        min-width: 780px;
+    }
+
+    #eventos .searchbar {
+        max-width: none;
+    }
+
+    /* Panel de detalle y pie */
+    .drawer {
+        width: min(480px, 100%);
+    }
+
+    .footer-inner {
+        grid-template-columns: 1fr;
+        gap: 32px;
+        align-items: start;
+    }
+
+    .footer-wordmark {
+        font-size: clamp(2.8rem, 10vw, 5rem);
+    }
 }
 
+/* ---------- ≤ 720 px: tablas convertidas en tarjetas ---------- */
 @media (max-width: 720px) {
     .tabla-wrap {
-        overflow-x: visible;
+        overflow: visible;
         border: 0;
+        border-radius: 0;
     }
 
-    .tabla-canchas {
+    .tabla-canchas,
+    #eventos .tabla-canchas {
         min-width: 0;
         width: 100%;
+        background: transparent;
+        border: 0;
+        border-radius: 0;
+        overflow: visible;
     }
 
-    /* 2. Permitir que el contenedor de la cancha y el texto se encogan y hagan salto de línea */
+    .tabla-canchas tbody {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .tabla-canchas tbody tr {
+        min-width: 0;
+        padding: 14px;
+        background: var(--m-surface);
+        border: 1px solid var(--m-rule);
+        border-radius: 6px;
+    }
+
+    .tabla-canchas tbody tr:last-child {
+        border-bottom: 1px solid var(--m-rule);
+    }
+
+    .item-cancha-lista:hover {
+        background: var(--m-surface);
+    }
+
+    .tabla-canchas tbody td {
+        min-width: 0;
+        overflow-wrap: anywhere;
+    }
+
     .tabla-canchas tbody td[data-label="Cancha"] {
         width: 100%;
-        box-sizing: border-box;
+    }
+
+    .miniatura {
+        width: 76px;
+        height: 52px;
     }
 
     .celda-cancha {
-        display: flex;
         align-items: flex-start;
         gap: 12px;
         width: 100%;
         min-width: 0;
     }
 
-    .celda-cancha .miniatura {
-        flex-shrink: 0;
-    }
-
     .celda-cancha__texto {
         flex: 1;
         min-width: 0;
-        display: flex;
-        flex-direction: column;
-        gap: 3px;
     }
 
     .celda-cancha__texto strong {
-        white-space: normal !important;
+        white-space: normal;
         overflow-wrap: break-word;
-        word-break: break-word;
-        font-size: 1.15rem;
-        line-height: 1.18;
+        font-size: 1.2rem;
+        line-height: 1.15;
     }
 
     .celda-cancha__texto small {
         white-space: normal;
-        line-height: 1.25;
+    }
+
+    /* Acciones de cada tarjeta de cancha */
+    #canchas .tabla-canchas tbody .col-acciones {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        width: auto;
+        padding-top: 6px;
+    }
+
+    #canchas .tabla-canchas tbody .col-acciones .btn {
+        margin-left: auto;
+    }
+
+    /* Tarjetas de eventos: una sola columna, con etiqueta en cada dato */
+    .tabla-canchas tbody tr:has(td[data-label="Evento"]) {
+        grid-template-columns: 1fr;
+    }
+
+    .tabla-canchas tbody tr:has(td[data-label="Evento"]) td {
+        grid-column: 1 / -1;
+    }
+
+    .tabla-canchas tbody tr:has(td[data-label="Evento"]) td:not([data-label="Evento"]):not(.col-acciones)::before {
+        content: attr(data-label) ": ";
+        color: var(--m-ink-3);
+        font-weight: 600;
+    }
+
+    .tabla-canchas tbody tr:has(td[data-label="Evento"]) .col-acciones {
+        padding-top: 6px;
+    }
+
+    .tabla-canchas tbody tr:has(td[data-label="Evento"]) .col-acciones .btn {
+        width: 100%;
+    }
+
+    /* Campos a 16 px para que iOS no haga zoom al enfocar (el login no se toca aquí) */
+    .searchbar .input-filtro,
+    .popover .select-nativo,
+    .popover .custom-select,
+    #modal-overlay .input-reserva,
+    #modal-overlay input[type="datetime-local"],
+    #admin-modal-overlay .input-reserva {
+        font-size: 16px;
     }
 }
 
-/* ==========================================================================
-   MÓVILES PEQUEÑOS (<= 640px)
-   ========================================================================== */
+/* ---------- ≤ 640 px: móviles ---------- */
 @media (max-width: 640px) {
-    .app-header .brand-copy strong {
-        font-size: 1.2rem;
+    .map-ui__left {
+        width: calc(100% - 24px);
     }
 
-    .app-header .brand-copy small,
-    .header-status {
-        display: none;
-    }
-
-    .app-header .btn--admin {
-        margin-left: auto;
-        padding: 6px 10px;
-        font-size: .85rem;
+    .map-ui__right {
+        top: 66px;
     }
 
     .resumen__total b {
@@ -1194,36 +1433,68 @@ main,
         font-size: 1.95rem;
     }
 
+    .section__head p {
+        font-size: .98rem;
+    }
+
     .count-pill b {
         font-size: 1.8rem;
     }
 
-    /* Panel lateral de detalle a pantalla completa en móvil */
+    /* Panel de detalle de la cancha a pantalla completa */
+    .modal-overlay--drawer {
+        padding: 0;
+    }
+
     .drawer {
-        width: 100vw;
-        max-width: 100vw;
+        width: 100%;
+        max-width: 100%;
     }
 
     .drawer #modal-imagen-contenedor {
         height: 190px;
     }
 
-    .drawer .modal-titulo {
-        font-size: 1.65rem;
+    .drawer .drawer__body {
+        padding: 18px 16px 36px;
     }
 
-    .drawer .btn {
-        width: 100%;
+    .drawer .modal-titulo {
+        font-size: 1.7rem;
+    }
+
+    .modal-acciones .btn {
+        flex: 1 1 100%;
         justify-content: center;
     }
 
-    /* Modal de administración responsivo */
+    .seccion-opciones-ruta {
+        flex-direction: column;
+    }
+
+    .drawer .seccion-reserva,
+    .drawer .panel-form {
+        padding: 12px;
+    }
+
+    .hub-head {
+        flex-wrap: wrap;
+    }
+
+    /* Administración a pantalla completa */
+    #admin-modal-overlay {
+        padding: 0;
+        align-items: stretch;
+    }
+
     #admin-modal-overlay .modal-content {
-        width: 96vw;
-        max-width: 96vw;
-        margin: 12px auto;
-        padding: 16px;
-        max-height: 92vh;
+        width: 100%;
+        max-width: 100%;
+        height: 100%;
+        max-height: none;
+        margin: 0;
+        padding: 18px 14px;
+        border-radius: 0;
         overflow-y: auto;
     }
 
@@ -1234,17 +1505,103 @@ main,
 
     #admin-modal-overlay .tab {
         padding: 10px 12px;
-        font-size: .88rem;
+        font-size: .9rem;
         white-space: nowrap;
     }
 
-    /* Pie de página */
-    .footer-wordmark {
-        font-size: clamp(2.6rem, 12vw, 3.8rem);
+    #admin-modal-overlay .row-card {
+        flex-wrap: wrap;
     }
 
-    .footer-links {
-        flex-direction: column;
-        gap: 10px;
+    /* Pie */
+    .footer-inner {
+        padding: 40px 16px 24px;
+    }
+
+    .footer-credit {
+        padding: 0 16px 24px;
+    }
+
+    .footer-wordmark {
+        font-size: clamp(2.6rem, 14vw, 3.8rem);
+    }
+
+    .footer-meta {
+        padding: 4px 16px;
+    }
+
+    .footer-meta>div {
+        flex-wrap: wrap;
+        gap: 4px 16px;
+    }
+
+    .footer-meta dd {
+        text-align: left;
+    }
+}
+
+/* ---------- ≤ 480 px: teléfonos pequeños ---------- */
+@media (max-width: 480px) {
+    .app-header {
+        padding: 0 10px 0 12px;
+    }
+
+    .app-header .brand-copy strong {
+        font-size: 1.15rem;
+    }
+
+    /* El administrador necesita sitio para su botón: se oculta el nombre y queda el logo */
+    .app-header:has(#contenedor-btn-admin) .brand-copy {
+        display: none;
+    }
+}
+
+@media (max-width: 360px) {
+    .app-header .brand-copy {
+        display: none;
+    }
+}
+
+/* ---------- Teléfono en horizontal ---------- */
+@media (max-width: 900px) and (max-height: 520px) and (orientation: landscape) {
+    :root {
+        --ws-h: calc(100dvh - 58px);
+    }
+
+    .map-ui__right {
+        top: 12px;
+    }
+
+    .app-header .main-nav {
+        max-height: calc(100dvh - 64px);
+    }
+}
+
+/* ---------- Pantallas táctiles ---------- */
+@media (pointer: coarse) {
+    .icon-btn {
+        width: 40px;
+        height: 40px;
+    }
+
+    .popover .check {
+        padding: 9px 0;
+    }
+
+    .layer-row {
+        padding: 11px 0;
+    }
+
+    .tab {
+        min-height: 40px;
+    }
+
+    .btn-sub-ruta {
+        min-height: 44px;
+    }
+
+    .drawer .btn,
+    #admin-modal-overlay .btn {
+        min-height: 42px;
     }
 }

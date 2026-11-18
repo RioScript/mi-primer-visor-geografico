@@ -14,7 +14,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
-        href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@400;500;600;700&display=swap" rel="stylesheet">
+        href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@400;500;600;700&display=swap"
+        rel="stylesheet">
 
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -158,14 +159,10 @@
 
             <!-- Rutas punteadas (el guion "corre") -->
             <g class="routes" fill="none" stroke-linecap="round">
-                <path id="ruta-a" class="ruta"
-                    d="M222 631C380 565 500 490 600 455S900 330 1040 304S1300 150 1386 79" />
-                <path id="ruta-b" class="ruta ruta--tenue"
-                    d="M386 171C450 110 520 200 600 150S720 90 800 140" />
-                <path id="ruta-c" class="ruta ruta--tenue"
-                    d="M1233 580C1180 520 1120 565 1060 505S960 470 900 520" />
-                <path id="ruta-d" class="ruta ruta--tenue"
-                    d="M1478 672C1400 630 1340 705 1260 690S1150 650 1100 690" />
+                <path id="ruta-a" class="ruta" d="M222 631C380 565 500 490 600 455S900 330 1040 304S1300 150 1386 79" />
+                <path id="ruta-b" class="ruta ruta--tenue" d="M386 171C450 110 520 200 600 150S720 90 800 140" />
+                <path id="ruta-c" class="ruta ruta--tenue" d="M1233 580C1180 520 1120 565 1060 505S960 470 900 520" />
+                <path id="ruta-d" class="ruta ruta--tenue" d="M1478 672C1400 630 1340 705 1260 690S1150 650 1100 690" />
             </g>
 
             <!-- Puntos móviles -->
@@ -176,8 +173,7 @@
                     <animate attributeName="opacity" values=".9;0;.9" dur="2.4s" repeatCount="indefinite" />
                 </circle>
                 <circle r="8" fill="var(--c)" />
-                <animateMotion dur="16s" repeatCount="indefinite" calcMode="linear"
-                    keyPoints="0;1;0" keyTimes="0;.5;1">
+                <animateMotion dur="16s" repeatCount="indefinite" calcMode="linear" keyPoints="0;1;0" keyTimes="0;.5;1">
                     <mpath href="#ruta-a" />
                 </animateMotion>
             </g>
@@ -194,8 +190,8 @@
             <!-- Verde final de la ruta A -->
             <g class="punto" style="--c:#34d399">
                 <circle r="7" fill="var(--c)" />
-                <animateMotion dur="9s" begin="-2s" repeatCount="indefinite" calcMode="linear"
-                    keyPoints="0.8;1;0.8" keyTimes="0;.5;1">
+                <animateMotion dur="9s" begin="-2s" repeatCount="indefinite" calcMode="linear" keyPoints="0.8;1;0.8"
+                    keyTimes="0;.5;1">
                     <mpath href="#ruta-a" />
                 </animateMotion>
             </g>
@@ -204,8 +200,7 @@
             <g class="punto" style="--c:#a78bfa">
                 <circle class="punto__aro" r="20" fill="none" stroke="var(--c)" stroke-width="2.5" opacity=".7" />
                 <circle r="7" fill="var(--c)" />
-                <animateMotion dur="10s" repeatCount="indefinite" calcMode="linear"
-                    keyPoints="0;1;0" keyTimes="0;.5;1">
+                <animateMotion dur="10s" repeatCount="indefinite" calcMode="linear" keyPoints="0;1;0" keyTimes="0;.5;1">
                     <mpath href="#ruta-b" />
                 </animateMotion>
             </g>
@@ -213,8 +208,8 @@
             <!-- Azul -->
             <g class="punto" style="--c:#60a5fa">
                 <circle r="7" fill="var(--c)" />
-                <animateMotion dur="9s" begin="-3s" repeatCount="indefinite" calcMode="linear"
-                    keyPoints="0;1;0" keyTimes="0;.5;1">
+                <animateMotion dur="9s" begin="-3s" repeatCount="indefinite" calcMode="linear" keyPoints="0;1;0"
+                    keyTimes="0;.5;1">
                     <mpath href="#ruta-c" />
                 </animateMotion>
             </g>
@@ -222,8 +217,8 @@
             <!-- Naranja esquina inferior derecha -->
             <g class="punto" style="--c:#fb923c">
                 <circle r="7" fill="var(--c)" />
-                <animateMotion dur="12s" begin="-6s" repeatCount="indefinite" calcMode="linear"
-                    keyPoints="0;1;0" keyTimes="0;.5;1">
+                <animateMotion dur="12s" begin="-6s" repeatCount="indefinite" calcMode="linear" keyPoints="0;1;0"
+                    keyTimes="0;.5;1">
                     <mpath href="#ruta-d" />
                 </animateMotion>
             </g>
@@ -370,7 +365,7 @@
             </span>
         </a>
 
-        <nav class="main-nav" aria-label="Navegación principal">
+        <nav id="main-nav" class="main-nav" aria-label="Navegación principal">
             <a href="#mapa" class="nav-link active" data-section="mapa">Mapa</a>
             <a href="#canchas" class="nav-link" data-section="canchas">Canchas</a>
             <a href="#eventos" class="nav-link" data-section="eventos">Eventos</a>
@@ -386,6 +381,12 @@
             <!-- Aquí se inserta el botón de administración cuando el usuario es admin -->
             <div id="header-acciones" class="header-slot"></div>
         </div>
+
+        <!-- Botón de menú (solo visible en tableta y móvil) -->
+        <button type="button" id="btn-menu" class="menu-toggle" aria-label="Abrir menú" aria-expanded="false"
+            aria-controls="main-nav">
+            <span class="menu-toggle__bars" aria-hidden="true"><i></i><i></i><i></i></span>
+        </button>
     </header>
 
     <main>
@@ -589,7 +590,8 @@
             <div class="section__head">
                 <div>
                     <h2>Eventos y Torneos en Sabaneta</h2>
-                    <p>Encuentra partidos recreativos, retos apostados y torneos barriales organizados por la comunidad.</p>
+                    <p>Encuentra partidos recreativos, retos apostados y torneos barriales organizados por la comunidad.
+                    </p>
                 </div>
                 <span class="count-pill"><b id="contador-total-eventos">0</b> activos</span>
             </div>
@@ -906,7 +908,9 @@
     <div id="admin-modal-overlay" class="modal-overlay oculto">
         <div class="modal-content modal-content--lg" role="dialog" aria-modal="true" aria-labelledby="admin-titulo">
             <button id="admin-modal-cerrar" type="button" class="modal-cerrar" aria-label="Cerrar">
-                <svg class="icon"><use href="#i-x" /></svg>
+                <svg class="icon">
+                    <use href="#i-x" />
+                </svg>
             </button>
             <h3 id="admin-titulo" class="modal-titulo">Panel de administración</h3>
             <p class="modal-subtexto">Gestión de escenarios, canchas y moderación de eventos.</p>
@@ -925,12 +929,16 @@
                 <div id="admin-canchas-lista-vista">
                     <div class="admin-toolbar">
                         <label class="admin-buscar">
-                            <svg class="icon"><use href="#i-search" /></svg>
+                            <svg class="icon">
+                                <use href="#i-search" />
+                            </svg>
                             <input type="search" id="admin-buscar-cancha" placeholder="Buscar por nombre o barrio"
                                 autocomplete="off" aria-label="Buscar cancha">
                         </label>
                         <button type="button" id="btn-admin-nueva-cancha" class="btn btn--primary btn--sm">
-                            <svg class="icon"><use href="#i-plus" /></svg>
+                            <svg class="icon">
+                                <use href="#i-plus" />
+                            </svg>
                             Nueva cancha
                         </button>
                     </div>
@@ -942,7 +950,8 @@
 
                 <!-- Vista B: formulario (crear y editar) -->
                 <div id="admin-cancha-form-vista" class="oculto">
-                    <button type="button" id="btn-admin-volver-lista" class="link-btn admin-volver">← Volver al listado</button>
+                    <button type="button" id="btn-admin-volver-lista" class="link-btn admin-volver">← Volver al
+                        listado</button>
                     <h4 id="admin-cancha-form-titulo" class="admin-h">Registrar nueva cancha</h4>
 
                     <form id="form-crear-cancha-admin" class="panel-form">
@@ -978,7 +987,9 @@
                             <div class="admin-ubicacion__cab">
                                 <span class="field-label">Ubicación</span>
                                 <button type="button" id="btn-admin-ubicar-mapa" class="btn btn--secondary btn--sm">
-                                    <svg class="icon"><use href="#i-target" /></svg>
+                                    <svg class="icon">
+                                        <use href="#i-target" />
+                                    </svg>
                                     Elegir en el mapa
                                 </button>
                             </div>
@@ -995,7 +1006,8 @@
                                 </div>
                             </div>
                             <p id="admin-cancha-aviso-geom" class="admin-aviso oculto">
-                                Esta cancha está dibujada como polígono. Si cambias las coordenadas, se reemplazará por un punto.
+                                Esta cancha está dibujada como polígono. Si cambias las coordenadas, se reemplazará por
+                                un punto.
                             </p>
                         </div>
 
@@ -1015,9 +1027,12 @@
                         </div>
 
                         <div class="admin-form-acciones">
-                            <button type="button" id="btn-admin-cancelar-cancha" class="btn btn--ghost">Cancelar</button>
+                            <button type="button" id="btn-admin-cancelar-cancha"
+                                class="btn btn--ghost">Cancelar</button>
                             <button type="submit" id="btn-admin-guardar-cancha" class="btn btn--primary">
-                                <svg class="icon"><use href="#i-check" /></svg>
+                                <svg class="icon">
+                                    <use href="#i-check" />
+                                </svg>
                                 <span id="btn-admin-guardar-cancha-texto">Guardar nueva cancha</span>
                             </button>
                         </div>
@@ -1033,9 +1048,13 @@
 
                 <div class="panel-form">
                     <h4 class="admin-h">Auditoría de desgaste y concurrencia</h4>
-                    <p class="modal-subtexto">Registros generados automáticamente por PostGIS en cada inscripción a eventos.</p>
-                    <button type="button" onclick="mapApp.cargarAlertasDesgasteAdmin()" class="btn btn--secondary btn--sm">
-                        <svg class="icon"><use href="#i-refresh" /></svg>
+                    <p class="modal-subtexto">Registros generados automáticamente por PostGIS en cada inscripción a
+                        eventos.</p>
+                    <button type="button" onclick="mapApp.cargarAlertasDesgasteAdmin()"
+                        class="btn btn--secondary btn--sm">
+                        <svg class="icon">
+                            <use href="#i-refresh" />
+                        </svg>
                         Consultar alertas de desgaste
                     </button>
                     <div id="lista-alertas-desgaste" class="scroll-box scroll-box--sm">
@@ -1056,7 +1075,8 @@
             <!-- ===== Pestaña 4: roles ===== -->
             <div id="admin-seccion-roles" class="oculto">
                 <h4 class="admin-h">Permisos y administradores</h4>
-                <p class="modal-subtexto">Cambia el rol de los usuarios registrados entre administrador y usuario estándar.</p>
+                <p class="modal-subtexto">Cambia el rol de los usuarios registrados entre administrador y usuario
+                    estándar.</p>
                 <div id="admin-lista-usuarios" class="scroll-box">
                     <p class="modal-subtexto">Cargando cuentas de usuarios...</p>
                 </div>
