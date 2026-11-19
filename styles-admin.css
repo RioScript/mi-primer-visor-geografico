@@ -1519,7 +1519,6 @@
     contain-intrinsic-size: auto 900px;
 }
 
-body:has(#intro-overlay:not(.oculto):not(.fade-out)) .app-header *,
 body:has(#intro-overlay:not(.oculto):not(.fade-out)) .map-ui__left {
     animation-play-state: paused !important;
 }
