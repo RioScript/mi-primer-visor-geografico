@@ -396,6 +396,7 @@ class MapViewer {
                         }
 
                         if (data?.session) {
+                            this.actualizarNavbarSesion(data.user || data.session.user);
                             mostrarMensaje('✅ ¡Cuenta creada correctamente!', '#0b7a4f');
                             setTimeout(() => {
                                 cerrarAuth();
@@ -416,6 +417,7 @@ class MapViewer {
                             return;
                         }
 
+                        this.actualizarNavbarSesion(data?.user || data?.session?.user || null);
                         mostrarMensaje('✅ ¡Bienvenido!', '#0b7a4f');
                         setTimeout(() => {
                             cerrarAuth();
@@ -449,8 +451,13 @@ class MapViewer {
             });
         }
 
+        this.supabase.auth.onAuthStateChange((_event, session) => {
+            this.actualizarNavbarSesion(session?.user || null);
+        });
+
         this.supabase.auth.getSession().then(({ data }) => {
             const session = data?.session;
+            this.actualizarNavbarSesion(session?.user || null);
             if (session?.user) {
                 if (overlay) overlay.classList.add('fade-out');
                 this.verificarPermisosAdmin(session.user.id);
@@ -459,6 +466,44 @@ class MapViewer {
                 }, 500);
             }
         });
+    }
+
+    actualizarNavbarSesion(user) {
+        const contenedor = document.getElementById('nav-sesion');
+        if (!contenedor) return;
+
+        if (!user) {
+            contenedor.innerHTML = '';
+            contenedor.hidden = true;
+            return;
+        }
+
+        contenedor.hidden = false;
+        if (!contenedor.querySelector('#btn-cerrar-sesion-nav')) {
+            contenedor.innerHTML = `
+                <button type="button" id="btn-cerrar-sesion-nav" class="nav-logout-btn" title="Cerrar sesión">
+                    <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/>
+                    </svg>
+                    <span>Cerrar sesión</span>
+                </button>
+            `;
+            document.getElementById('btn-cerrar-sesion-nav')?.addEventListener('click', () => this.cerrarSesion());
+        }
+    }
+
+    async cerrarSesion() {
+        const { error } = await this.supabase.auth.signOut();
+        if (error) {
+            this.toast('❌ No se pudo cerrar la sesión.');
+            return;
+        }
+
+        document.getElementById('contenedor-btn-admin')?.remove();
+        document.getElementById('admin-modal-overlay')?.classList.add('oculto');
+        this.actualizarNavbarSesion(null);
+        document.getElementById('intro-overlay')?.classList.remove('fade-out');
+        this.toast('Sesión cerrada.');
     }
 
     async verificarPermisosAdmin(userId) {
@@ -853,7 +898,7 @@ class MapViewer {
         else if (mq.addListener) mq.addListener(alCambiar);
     }
 
-        // --- Decoración navideña (gorro, copo y nieve) ---
+    // --- Decoración navideña (gorro, copo y nieve) ---
     // Para quitarla en enero: pon NAVIDAD_ACTIVA en false (o borra el <link> del CSS)
     initNavidad() {
         iniciarDecoracionNavidad();
