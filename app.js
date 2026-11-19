@@ -54,6 +54,7 @@ class MapViewer {
         this.barrioSeleccionadoValor = '';
         this._canchaAdminEditando = null;
         this._linkAtendido = false;
+        this._modoSeleccionAdminActivo = false;
 
         // Variables de estado para capas
         this.modoEnfoqueActivo = false;
@@ -109,10 +110,70 @@ class MapViewer {
         this.initMenuMovil();
         this.cargarCapaGdalProcesada();
         this.initCargaEfectivaPorViewport();
+        this.activarModoSeleccionAdmin();
 
         setTimeout(() => {
             this.map.invalidateSize();
         }, 200);
+    }
+
+    // --- CONEXIÓN CON ADMIN.JS (?elegir=ubicacion) ---
+    activarModoSeleccionAdmin() {
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('elegir') !== 'ubicacion' || !this.map) return;
+
+        this._modoSeleccionAdminActivo = true;
+        document.getElementById('intro-overlay')?.classList.add('fade-out');
+        document.getElementById('intro-overlay')?.classList.add('oculto');
+
+        const mapEl = this.map.getContainer();
+        mapEl.style.cursor = 'crosshair';
+
+        document.getElementById('banner-elegir-ubicacion')?.remove();
+        const aviso = document.createElement('div');
+        aviso.id = 'banner-elegir-ubicacion';
+        aviso.textContent = 'Haz clic en el mapa para elegir la ubicación de la cancha... (Esc para volver)';
+        aviso.style.cssText = `
+            position: fixed;
+            top: 16px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 9999;
+            background: #0f4c37;
+            color: #ffffff;
+            padding: 10px 18px;
+            border-radius: 999px;
+            font-size: 14px;
+            font-weight: 600;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28);
+            border: 1px solid rgba(255, 255, 255, 0.25);
+        `;
+        document.body.appendChild(aviso);
+
+        const limpiarYVolver = (coords = null) => {
+            this._modoSeleccionAdminActivo = false;
+            mapEl.style.cursor = '';
+            aviso.remove();
+            document.removeEventListener('keydown', alEscape);
+            if (coords) {
+                sessionStorage.setItem('admin_coords', JSON.stringify(coords));
+            }
+            window.location.href = 'admin.html';
+        };
+
+        const alEscape = (e) => {
+            if (e.key === 'Escape') limpiarYVolver(null);
+        };
+
+        document.addEventListener('keydown', alEscape);
+
+        this.map.once('click', (e) => {
+            document.removeEventListener('keydown', alEscape);
+            limpiarYVolver({
+                lat: Number(e.latlng.lat.toFixed(6)),
+                lng: Number(e.latlng.lng.toFixed(6))
+            });
+        });
     }
 
     // --- UTILIDAD DE DESREBOTE (DEBOUNCE) ---
@@ -1465,12 +1526,13 @@ class MapViewer {
         setTimeout(() => this.map.invalidateSize(), 100);
 
         const idLink = new URLSearchParams(location.search).get('cancha');
-        if (idLink && !this._linkAtendido) {
+        if (idLink && !this._linkAtendido && !this._modoSeleccionAdminActivo) {
             this._linkAtendido = true;
             document.getElementById('intro-overlay')?.classList.add('fade-out');
             this.enfocarCanchaPorId(idLink, true);
         }
     }
+
 
     // --- Utilidades de presentación ---
     escaparHtml(valor) {

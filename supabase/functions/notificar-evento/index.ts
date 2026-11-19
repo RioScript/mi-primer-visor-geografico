@@ -1,12 +1,25 @@
 // supabase/functions/notificar-evento/index.ts
 // Se dispara con un Database Webhook (tabla eventos, INSERT).
 // Secrets necesarios:
-//   RESEND_API_KEY, MAIL_FROM, SITE_URL, WEBHOOK_SECRET, SUPABASE_SERVICE_ROLE_KEY
+//   RESEND_API_KEY, MAIL_FROM, SITE_URL, WEBHOOK_SECRET
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const esc = (s: unknown) =>
   String(s ?? "").replace(/[&<>"']/g, (c) =>
     ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]!));
+
+function formatearFechaCo(valor: unknown): string {
+  const raw = String(valor ?? "").trim();
+  if (!raw) return "";
+  const soloFecha = /^\d{4}-\d{2}-\d{2}$/.test(raw);
+  const d = new Date(soloFecha ? `${raw}T12:00:00-05:00` : raw);
+  if (Number.isNaN(d.getTime())) return raw;
+  return d.toLocaleString("es-CO", {
+    timeZone: "America/Bogota",
+    dateStyle: "medium",
+    ...(soloFecha ? {} : { timeStyle: "short" }),
+  });
+}
 
 Deno.serve(async (req) => {
   const secret = Deno.env.get("WEBHOOK_SECRET");
@@ -37,7 +50,7 @@ Deno.serve(async (req) => {
   const sb = createClient(supabaseUrl, serviceRoleKey);
 
   const canchaId = ev.cancha_id;
-  const { data: cancha } = canchaId != null
+  const { data: cancha } = canchaId != null && canchaId !== ""
     ? await sb.from("canchas").select("nombre").eq("id", canchaId).maybeSingle()
     : { data: null };
 
@@ -51,9 +64,12 @@ Deno.serve(async (req) => {
     return new Response(JSON.stringify({ error: usersError.message }), { status: 500 });
   }
 
-  const enlace = `${siteUrl}/?cancha=${encodeURIComponent(String(canchaId ?? ""))}`;
+  const enlace = canchaId != null && canchaId !== ""
+    ? `${siteUrl}/?cancha=${encodeURIComponent(String(canchaId))}`
+    : `${siteUrl}/`;
+
   const titulo = String(ev.titulo || ev.tipo_evento || "Nuevo evento");
-  const cuando = String(ev.fecha_hora || ev.fecha_inicio || "");
+  const cuando = formatearFechaCo(ev.fecha_hora || ev.fecha_inicio);
 
   const html = (nombre: string | null) => `
   <div style="font-family:Arial,sans-serif;max-width:520px;margin:auto;border:1px solid #dbe5df;border-radius:12px;overflow:hidden">
@@ -69,22 +85,21 @@ Deno.serve(async (req) => {
       ${ev.descripcion ? `<p style="color:#3d524a">${esc(ev.descripcion)}</p>` : ""}
       ${ev.contacto ? `<p style="margin:2px 0;color:#3d524a"><b>Contacto:</b> ${esc(ev.contacto)}</p>` : ""}
       <p style="text-align:center;margin:26px 0 8px">
-        <a href="${enlace}" style="background:#1f7a4d;color:#fff;text-decoration:none;padding:12px 26px;border-radius:6px;font-weight:bold">Pulse aquí</a>
+        <a href="${esc(enlace)}" style="background:#1f7a4d;color:#fff;text-decoration:none;padding:12px 26px;border-radius:6px;font-weight:bold">Pulse aquí</a>
       </p>
       <p style="font-size:12px;color:#6a776f;text-align:center">Te llevará directo a la cancha en el visor.</p>
     </div>
   </div>`;
 
   const mensajes = (users ?? [])
-    .filter((u) => Boolean(u.email))
+    .filter((u) => typeof u.email === "string" && u.email.trim().length > 0)
     .map((u) => ({
       from: mailFrom,
-      to: [String(u.email)],
+      to: [String(u.email).trim()],
       subject: `Nuevo evento: ${titulo}`,
       html: html(u.nombre),
     }));
 
-  // Resend admite hasta 100 correos por llamada
   for (let i = 0; i < mensajes.length; i += 100) {
     const resp = await fetch("https://api.resend.com/emails/batch", {
       method: "POST",

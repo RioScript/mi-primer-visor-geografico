@@ -4,174 +4,253 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Administración | Sabaneta en la jugada</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@400;500;600;700&display=swap">
+<link rel="icon" type="image/png" href="img/logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
-<style>
-  body { font-family: "Barlow", system-ui, sans-serif; background: #e6e9e7; }
-  .adm-top { height: 64px; display:flex; align-items:center; justify-content:space-between; padding:0 24px;
-    background:#0c3122; color:#fff; border-bottom:3px solid #f0c419; }
-  .adm-top strong { font-family:"Barlow Condensed"; font-size:1.5rem; }
-  .adm-top a { color:#f0c419; font-weight:600; text-decoration:none; }
-  .adm-wrap { display:grid; grid-template-columns:230px 1fr; min-height:calc(100dvh - 64px); }
-  .adm-side { background:#f7f8f6; border-right:1px solid #c9d0cb; padding:18px 12px; }
-  .adm-side button { display:block; width:100%; text-align:left; padding:12px 14px; margin-bottom:4px; border:0;
-    border-left:4px solid transparent; background:none; font-size:1rem; font-weight:600; color:#45534b; border-radius:0 6px 6px 0; }
-  .adm-side button.is-active { background:#dcebe2; border-left-color:#f0c419; color:#17211c; }
-  .adm-main { padding:28px; max-width:1100px; }
-  .adm-main h1 { font-family:"Barlow Condensed"; font-size:2.2rem; line-height:1; }
-  .adm-card { background:#fff; border:1px solid #c9d0cb; border-radius:8px; padding:18px; margin-top:16px; }
-  .adm-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
-  .adm-actions { display:flex; gap:10px; margin-top:14px; }
-  .adm-user { display:grid; grid-template-columns:1fr auto; gap:10px; align-items:center; padding:12px 0; border-bottom:1px solid #dbe0dc; }
-  .adm-user small { color:#6a776f; display:block; }
-  .rol { font-weight:700; } .rol.admin { color:#0b7a4f; }
-  .adm-pend { color:#6a776f; padding:20px 0; }
-  @media (max-width:800px){ .adm-wrap{grid-template-columns:1fr} .adm-side{display:flex;overflow-x:auto} .adm-grid{grid-template-columns:1fr} }
-</style>
+<link rel="stylesheet" href="styles-interfaz.css">
+<link rel="stylesheet" href="styles-admin.css">
+<link rel="stylesheet" href="admin-page.css">
 </head>
-<body>
-<header class="adm-top">
-  <strong>Panel de administración</strong>
-  <a href="index.html">← Volver al visor</a>
-</header>
+<body class="admin-cargando">
 
-<div class="adm-wrap">
-  <nav class="adm-side" id="tabs">
-    <button data-tab="canchas">Canchas</button>
-    <button data-tab="analisis">Análisis GIS</button>
-    <button data-tab="eventos">Eventos</button>
-    <button data-tab="permisos" class="is-active">Permisos</button>
-  </nav>
+<svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></symbol>
+    <symbol id="i-pin" viewBox="0 0 24 24"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
+    <symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></symbol>
+    <symbol id="i-cross" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7"/><path d="M12 2v6M12 16v6M2 12h6M16 12h6"/></symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/></symbol>
+    <symbol id="i-trophy" viewBox="0 0 24 24"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6M18 9h1.5a2.5 2.5 0 0 0 0-5H18M4 22h16M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22M18 2H6v7a6 6 0 0 0 12 0V2Z"/></symbol>
+    <symbol id="i-users" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></symbol>
+    <symbol id="i-user" viewBox="0 0 24 24"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></symbol>
+    <symbol id="i-road" viewBox="0 0 24 24"><path d="M4 22 8 2M20 22 16 2M12 6v2M12 12v2M12 18v2"/></symbol>
+    <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8M21 3v5h-5M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16M8 16H3v5"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M5 12h14M12 5v14"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+    <symbol id="i-inbox" viewBox="0 0 24 24"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></symbol>
+    <symbol id="i-cl" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></symbol>
+    <symbol id="i-cr" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></symbol>
+    <symbol id="i-cll" viewBox="0 0 24 24"><path d="m11 17-5-5 5-5M18 17l-5-5 5-5"/></symbol>
+    <symbol id="i-crr" viewBox="0 0 24 24"><path d="m6 17 5-5-5-5M13 17l5-5-5-5"/></symbol>
+  </defs>
+</svg>
 
-  <main class="adm-main">
-    <!-- Canchas / Análisis / Eventos: aquí se migra el código que hoy está en app.js -->
-    <section id="tab-canchas" class="oculto"><h1>Canchas</h1><p class="adm-pend">Pendiente de migrar desde app.js.</p></section>
-    <section id="tab-analisis" class="oculto"><h1>Análisis GIS</h1><p class="adm-pend">Pendiente de migrar desde app.js.</p></section>
-    <section id="tab-eventos" class="oculto"><h1>Eventos</h1><p class="adm-pend">Pendiente de migrar desde app.js.</p></section>
+<div id="admin-modal-overlay" class="admin-page">
+  <div class="cancha-balones-bg" aria-hidden="true">
+    <span class="balon-chute" id="balon-fondo"></span>
+  </div>
 
-    <section id="tab-permisos">
-      <h1>Permisos y administradores</h1>
-      <p class="modal-subtexto">Busca un participante con cualquiera de los filtros. Ninguno es obligatorio, pero debes usar al menos uno.</p>
+  <div class="modal-content admin-wide" role="main" aria-labelledby="admin-titulo">
+    <a class="admin-salir" href="index.html">← Volver al visor</a>
 
-      <form id="form-buscar" class="adm-card">
-        <div class="adm-grid">
-          <div class="grupo-campo"><label for="f-rol">Tipo de participante</label>
-            <select id="f-rol" class="input-reserva">
-              <option value="">Todos</option><option value="user">Usuario</option><option value="admin">Administrador</option>
+    <h1 id="admin-titulo" class="modal-titulo">Panel de administración</h1>
+    <p class="modal-subtexto">Gestión de escenarios, canchas, eventos y participantes.</p>
+
+    <div class="tabs tabs--admin" role="tablist">
+      <button id="tab-btn-canchas" type="button" class="tab is-active">Canchas</button>
+      <button id="tab-btn-analisis" type="button" class="tab">Análisis GIS</button>
+      <button id="tab-btn-eventos" type="button" class="tab">Eventos</button>
+      <button id="tab-btn-roles" type="button" class="tab">Participantes</button>
+    </div>
+
+    <!-- ===== Canchas ===== -->
+    <div id="admin-seccion-canchas">
+      <div id="admin-canchas-lista-vista">
+        <div class="admin-toolbar">
+          <label class="admin-buscar">
+            <svg class="icon"><use href="#i-search"/></svg>
+            <input type="search" id="admin-buscar-cancha" placeholder="Buscar por nombre o barrio" autocomplete="off" aria-label="Buscar cancha">
+          </label>
+          <button type="button" id="btn-admin-nueva-cancha" class="btn btn--primary btn--sm">
+            <svg class="icon"><use href="#i-plus"/></svg>Nueva cancha
+          </button>
+        </div>
+        <p id="admin-canchas-contador" class="modal-subtexto"></p>
+        <div id="admin-lista-canchas" class="scroll-box"><p class="modal-subtexto">Cargando canchas...</p></div>
+      </div>
+
+      <div id="admin-cancha-form-vista" class="oculto">
+        <button type="button" id="btn-admin-volver-lista" class="link-btn admin-volver">← Volver al listado</button>
+        <h4 id="admin-cancha-form-titulo" class="admin-h">Registrar nueva cancha</h4>
+
+        <form id="form-crear-cancha-admin" class="panel-form">
+          <input type="hidden" id="admin-cancha-id">
+
+          <div class="fc-izq">
+            <div class="grupo-campo">
+              <label for="admin-cancha-nombre">Nombre de la cancha</label>
+              <input type="text" id="admin-cancha-nombre" class="input-reserva" placeholder="Ej: Cancha Sintética El Dorado" required>
+            </div>
+            <div class="form-row">
+              <div class="grupo-campo">
+                <label for="admin-cancha-surface">Superficie</label>
+                <select id="admin-cancha-surface" class="input-reserva">
+                  <option value="artificial_turf">Sintética / grama artificial</option>
+                  <option value="grass">Grama natural</option>
+                  <option value="concrete">Concreto / pavimentada</option>
+                  <option value="asphalt">Asfalto</option>
+                  <option value="paving_stones">Adoquín</option>
+                  <option value="">Sin dato</option>
+                </select>
+              </div>
+              <div class="grupo-campo">
+                <label for="admin-cancha-barrio">Barrio</label>
+                <select id="admin-cancha-barrio" class="input-reserva"><option value="">Sin barrio</option></select>
+              </div>
+            </div>
+            <div class="grupo-campo">
+              <label for="admin-cancha-horario">Horario (opcional)</label>
+              <input type="text" id="admin-cancha-horario" class="input-reserva" placeholder="Ej: Lunes a domingo, 6:00 a. m. a 10:00 p. m.">
+            </div>
+            <div class="admin-imagen">
+              <span class="field-label">Foto de la cancha (opcional)</span>
+              <div id="admin-cancha-preview" class="admin-preview"><span>Sin imagen</span></div>
+              <input type="url" id="admin-cancha-imagen" class="input-reserva" placeholder="Pega la URL de una imagen: https://...">
+              <div class="admin-o">o sube una foto desde tu equipo</div>
+              <input type="file" id="admin-cancha-foto" class="input-reserva" accept="image/*">
+            </div>
+          </div>
+
+          <div class="admin-ubicacion">
+            <div class="admin-ubicacion__cab"><span class="field-label">Ubicación</span></div>
+            <p class="admin-ubicacion__ayuda">Escribe las coordenadas o, si no las tienes a la mano, elígelas directamente en el mapa del visor.</p>
+            <button type="button" id="btn-admin-ubicar-mapa" class="btn btn--mapa">
+              <svg class="icon"><use href="#i-cross"/></svg>Elegir en el mapa
+            </button>
+            <div class="form-row ubic-coords">
+              <div class="grupo-campo">
+                <label for="admin-cancha-lat">Latitud</label>
+                <input type="text" id="admin-cancha-lat" class="input-reserva" placeholder="Ej: 6.15150" inputmode="decimal" required>
+              </div>
+              <div class="grupo-campo">
+                <label for="admin-cancha-lng">Longitud</label>
+                <input type="text" id="admin-cancha-lng" class="input-reserva" placeholder="Ej: -75.61660" inputmode="decimal" required>
+              </div>
+            </div>
+            <span id="ubic-estado" class="ubic-estado"><svg class="icon"><use href="#i-pin"/></svg><span>Sin ubicación</span></span>
+            <p id="admin-cancha-aviso-geom" class="admin-aviso oculto">Esta cancha está dibujada como polígono. Si cambias las coordenadas, se reemplazará por un punto.</p>
+          </div>
+
+          <div class="admin-form-acciones">
+            <button type="button" id="btn-admin-cancelar-cancha" class="btn btn--ghost">Cancelar</button>
+            <button type="submit" id="btn-admin-guardar-cancha" class="btn btn--primary">
+              <svg class="icon"><use href="#i-check"/></svg>
+              <span id="btn-admin-guardar-cancha-texto">Guardar nueva cancha</span>
+            </button>
+          </div>
+          <p id="mensaje-admin-cancha" class="form-mensaje"></p>
+        </form>
+      </div>
+    </div>
+
+    <!-- ===== Análisis GIS ===== -->
+    <div id="admin-seccion-analisis" class="oculto">
+      <h4 class="admin-h">Análisis espacial</h4>
+      <div class="admin-card admin-card--gis">
+        <div class="gis-card__radar" aria-hidden="true"><i></i><i></i><i></i></div>
+        <div class="gis-card__cuerpo">
+          <span class="gis-card__etiqueta">Centro de análisis espacial · PostGIS</span>
+          <h4 class="gis-card__titulo">Zonas de influencia de las canchas</h4>
+          <p class="gis-card__txt">Cada vez que agregues, edites o elimines canchas, recalcula para actualizar los buffers y el análisis en el mapa.</p>
+          <ul class="gis-leyenda">
+            <li><i style="--c:#dc2626"></i>Alta inversión</li>
+            <li><i style="--c:#f59e0b"></i>Mantenimiento</li>
+            <li><i style="--c:#3b82f6"></i>Zona tranquila</li>
+            <li><i style="--c:#a855f7"></i>Punto de análisis</li>
+          </ul>
+          <button id="btn-recalcular-gdal" type="button" class="btn btn--gis btn--block">
+            <svg class="icon"><use href="#i-refresh"/></svg>Recalcular análisis GIS
+          </button>
+          <small id="gis-ultima-act" class="gis-card__sello">Mide uso, calificaciones y eventos de cada cancha</small>
+        </div>
+      </div>
+      <div class="panel-form">
+        <h4 class="admin-h">Auditoría de desgaste y concurrencia</h4>
+        <p class="modal-subtexto">Registros generados automáticamente por PostGIS en cada inscripción a eventos.</p>
+        <button type="button" id="btn-alertas" class="btn btn--secondary btn--sm">
+          <svg class="icon"><use href="#i-refresh"/></svg>Consultar alertas de desgaste
+        </button>
+        <div id="lista-alertas-desgaste" class="scroll-box scroll-box--sm">
+          <p class="modal-subtexto">Pulsa el botón para cargar las alertas recientes.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== Eventos ===== -->
+    <div id="admin-seccion-eventos" class="oculto">
+      <h4 class="admin-h">Moderación de torneos y desafíos activos</h4>
+      <p class="modal-subtexto">Elimina eventos que incumplan las normas o presenten fraudes.</p>
+      <div id="admin-lista-eventos" class="scroll-box"><p class="modal-subtexto">Cargando eventos globales...</p></div>
+    </div>
+
+    <!-- ===== Participantes ===== -->
+    <div id="admin-seccion-roles" class="oculto">
+      <div class="part-banner">
+        <div class="part-banner__ico"><svg class="icon"><use href="#i-users"/></svg></div>
+        <div>
+          <h2>Gestión de Participantes</h2>
+          <p>Administra los usuarios del sistema y sus permisos de forma sencilla y organizada.</p>
+        </div>
+        <div class="part-kpis">
+          <button type="button" class="part-kpi" data-rol=""><b id="kpi-total">–</b><span>Participantes</span></button>
+          <button type="button" class="part-kpi part-kpi--user" data-rol="user"><b id="kpi-user">–</b><span>Usuarios</span></button>
+          <button type="button" class="part-kpi part-kpi--admin" data-rol="admin"><b id="kpi-admin">–</b><span>Administradores</span></button>
+        </div>
+      </div>
+
+      <form id="form-buscar" class="part-filtros" autocomplete="off">
+        <div class="part-grid">
+          <div class="part-campo"><label for="f-rol">Tipo de Participante</label>
+            <select id="f-rol" class="input-reserva select-nativo">
+              <option value="">Seleccione tipo de participante</option>
+              <option value="user">Usuario</option>
+              <option value="admin">Administrador</option>
             </select></div>
-          <div class="grupo-campo"><label for="f-nombre">Nombre</label><input id="f-nombre" class="input-reserva" placeholder="Ingrese nombre"></div>
-          <div class="grupo-campo"><label for="f-apellidos">Apellidos</label><input id="f-apellidos" class="input-reserva" placeholder="Ingrese apellidos"></div>
-          <div class="grupo-campo"><label for="f-telefono">Teléfono</label><input id="f-telefono" class="input-reserva" inputmode="tel" placeholder="Ingrese teléfono"></div>
-          <div class="grupo-campo"><label for="f-correo">Correo</label><input id="f-correo" class="input-reserva" placeholder="Ingrese correo"></div>
+          <div class="part-campo"><label for="f-nombre">Nombre</label>
+            <input id="f-nombre" class="input-reserva" placeholder="Ingrese nombre"></div>
+          <div class="part-campo"><label for="f-apellidos">Apellidos</label>
+            <input id="f-apellidos" class="input-reserva" placeholder="Ingrese apellidos"></div>
+          <div class="part-campo"><label for="f-telefono">Teléfono</label>
+            <input id="f-telefono" class="input-reserva" inputmode="tel" placeholder="Ingrese teléfono"></div>
+          <div class="part-campo part-campo--2"><label for="f-correo">Correo</label>
+            <input id="f-correo" class="input-reserva" placeholder="Ingrese correo"></div>
         </div>
-        <div class="adm-actions">
-          <button type="submit" class="btn btn--primary">Buscar participante</button>
-          <button type="button" id="btn-limpiar" class="btn btn--ghost">Limpiar</button>
+        <div class="part-acciones">
+          <button type="submit" class="btn btn--primary"><svg class="icon"><use href="#i-search"/></svg>Buscar Participante</button>
+          <button type="button" id="btn-limpiar" class="btn btn--ghost"><svg class="icon"><use href="#i-x"/></svg>Limpiar</button>
         </div>
-        <p id="msg" class="form-mensaje"></p>
+        <p id="part-msg" class="form-mensaje" role="status"></p>
       </form>
 
-      <div class="adm-card" id="resultados-card" hidden>
-        <strong id="resumen"></strong>
-        <div id="resultados"></div>
+      <div class="part-tabla">
+        <div class="part-tabla__scroll">
+          <table>
+            <thead><tr><th>Participante</th><th>Correo</th><th>Teléfono</th><th>Rol</th><th style="text-align:right">Acción</th></tr></thead>
+            <tbody id="part-tbody"></tbody>
+          </table>
+        </div>
+        <div class="part-pie">
+          <span id="part-resumen">Mostrando 0 a 0 de 0 registros</span>
+          <div class="part-pag">
+            <button type="button" id="part-first" aria-label="Primera página"><svg class="icon"><use href="#i-cll"/></svg></button>
+            <button type="button" id="part-prev" aria-label="Anterior"><svg class="icon"><use href="#i-cl"/></svg></button>
+            <span id="part-pagina" class="part-pagina">Página 1 de 1</span>
+            <button type="button" id="part-next" aria-label="Siguiente"><svg class="icon"><use href="#i-cr"/></svg></button>
+            <button type="button" id="part-last" aria-label="Última página"><svg class="icon"><use href="#i-crr"/></svg></button>
+          </div>
+          <select id="part-tam" class="select-nativo part-tam" aria-label="Registros por página">
+            <option value="10" selected>10</option><option value="25">25</option><option value="50">50</option>
+          </select>
+        </div>
       </div>
-    </section>
-  </main>
+    </div>
+  </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script>
-const sb = window.supabase.createClient(
-  "https://vdltyryvmphxdcxjrgsf.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZkbHR5cnl2bXBoeGRjeGpyZ3NmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc3NTU5NTgsImV4cCI6MjEwMzMzMTk1OH0.vxqi58vWcfbWqoRTs9-AhalTOJS5rkOGQKbGrCOb9WA" // la misma que usas en app.js
-);
-const $ = (id) => document.getElementById(id);
-let yoId = null;
-
-// --- Guardia: solo administradores ---
-(async () => {
-  const { data: { session } } = await sb.auth.getSession();
-  if (!session) return location.replace('index.html');
-  yoId = session.user.id;
-  const { data } = await sb.from('profiles').select('role').eq('id', yoId).single();
-  if (data?.role !== 'admin') return location.replace('index.html');
-})();
-
-// --- Pestañas ---
-$('tabs').addEventListener('click', (e) => {
-  const b = e.target.closest('[data-tab]'); if (!b) return;
-  document.querySelectorAll('#tabs button').forEach(x => x.classList.toggle('is-active', x === b));
-  ['canchas','analisis','eventos','permisos'].forEach(t => $('tab-' + t).classList.toggle('oculto', t !== b.dataset.tab));
-});
-
-// --- Búsqueda ---
-// Quita caracteres que rompen el filtro .or() de PostgREST y escapa comodines de LIKE
-const limpiar = (s) => s.trim().replace(/[,()*%_\\]/g, ' ').replace(/\s+/g, ' ');
-
-$('form-buscar').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const f = {
-    role: $('f-rol').value,
-    nombre: limpiar($('f-nombre').value),
-    apellidos: limpiar($('f-apellidos').value),
-    telefono: limpiar($('f-telefono').value).replace(/\s/g, ''),
-    email: limpiar($('f-correo').value),
-  };
-  if (!Object.values(f).some(Boolean)) {
-    $('msg').style.color = '#b3382d';
-    $('msg').textContent = 'Usa al menos un filtro para buscar.';
-    return;
-  }
-  $('msg').textContent = '';
-
-  let q = sb.from('profiles').select('id, email, role, nombre, apellidos, telefono').order('email').limit(50);
-  if (f.role) q = q.eq('role', f.role);
-  if (f.nombre) q = q.ilike('nombre', `%${f.nombre}%`);
-  if (f.apellidos) q = q.ilike('apellidos', `%${f.apellidos}%`);
-  if (f.telefono) q = q.ilike('telefono', `%${f.telefono}%`);
-  if (f.email) q = q.ilike('email', `%${f.email}%`);
-
-  const { data, error } = await q;
-  if (error) { $('msg').style.color = '#b3382d'; $('msg').textContent = error.message; return; }
-  pintar(data || []);
-});
-
-$('btn-limpiar').addEventListener('click', () => {
-  $('form-buscar').reset(); $('msg').textContent = ''; $('resultados-card').hidden = true;
-});
-
-function pintar(lista) {
-  $('resultados-card').hidden = false;
-  $('resumen').textContent = lista.length ? `${lista.length} participante(s) encontrado(s)` : 'No se encontraron participantes.';
-  const cont = $('resultados'); cont.textContent = '';
-  lista.forEach(u => {
-    const fila = document.createElement('div'); fila.className = 'adm-user';
-    const info = document.createElement('div');
-    const nom = document.createElement('strong');
-    nom.textContent = [u.nombre, u.apellidos].filter(Boolean).join(' ') || '(sin nombre)';
-    const l1 = document.createElement('small'); l1.textContent = `${u.email || ''}${u.telefono ? ' · ' + u.telefono : ''}`;
-    const l2 = document.createElement('small'); l2.append('Rol: ');
-    const r = document.createElement('span'); r.className = 'rol ' + u.role; r.textContent = u.role === 'admin' ? 'ADMIN' : 'USUARIO';
-    l2.append(r);
-    info.append(nom, l1, l2);
-
-    const btn = document.createElement('button');
-    btn.className = 'btn btn--sm ' + (u.role === 'admin' ? 'btn--secondary' : 'btn--primary');
-    btn.textContent = u.role === 'admin' ? 'Hacer usuario' : 'Hacer admin';
-    if (u.id === yoId) { btn.disabled = true; btn.title = 'No puedes cambiar tu propio rol'; }
-    btn.addEventListener('click', () => cambiarRol(u, btn));
-    fila.append(info, btn); cont.append(fila);
-  });
-}
-
-async function cambiarRol(u, btn) {
-  const nuevo = u.role === 'admin' ? 'user' : 'admin';
-  if (!confirm(`¿Cambiar el rol de ${u.email} a ${nuevo === 'admin' ? 'administrador' : 'usuario'}?`)) return;
-  btn.disabled = true;
-  const { error } = await sb.from('profiles').update({ role: nuevo }).eq('id', u.id);
-  if (error) { alert('No se pudo cambiar el rol: ' + error.message); btn.disabled = false; return; }
-  $('form-buscar').requestSubmit(); // refresca resultados
-}
-</script>
+<script src="admin.js"></script>
 </body>
 </html>
