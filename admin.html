@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Administración | Sabaneta en la jugada</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="styles.css">
+<style>
+  body { font-family: "Barlow", system-ui, sans-serif; background: #e6e9e7; }
+  .adm-top { height: 64px; display:flex; align-items:center; justify-content:space-between; padding:0 24px;
+    background:#0c3122; color:#fff; border-bottom:3px solid #f0c419; }
+  .adm-top strong { font-family:"Barlow Condensed"; font-size:1.5rem; }
+  .adm-top a { color:#f0c419; font-weight:600; text-decoration:none; }
+  .adm-wrap { display:grid; grid-template-columns:230px 1fr; min-height:calc(100dvh - 64px); }
+  .adm-side { background:#f7f8f6; border-right:1px solid #c9d0cb; padding:18px 12px; }
+  .adm-side button { display:block; width:100%; text-align:left; padding:12px 14px; margin-bottom:4px; border:0;
+    border-left:4px solid transparent; background:none; font-size:1rem; font-weight:600; color:#45534b; border-radius:0 6px 6px 0; }
+  .adm-side button.is-active { background:#dcebe2; border-left-color:#f0c419; color:#17211c; }
+  .adm-main { padding:28px; max-width:1100px; }
+  .adm-main h1 { font-family:"Barlow Condensed"; font-size:2.2rem; line-height:1; }
+  .adm-card { background:#fff; border:1px solid #c9d0cb; border-radius:8px; padding:18px; margin-top:16px; }
+  .adm-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
+  .adm-actions { display:flex; gap:10px; margin-top:14px; }
+  .adm-user { display:grid; grid-template-columns:1fr auto; gap:10px; align-items:center; padding:12px 0; border-bottom:1px solid #dbe0dc; }
+  .adm-user small { color:#6a776f; display:block; }
+  .rol { font-weight:700; } .rol.admin { color:#0b7a4f; }
+  .adm-pend { color:#6a776f; padding:20px 0; }
+  @media (max-width:800px){ .adm-wrap{grid-template-columns:1fr} .adm-side{display:flex;overflow-x:auto} .adm-grid{grid-template-columns:1fr} }
+</style>
+</head>
+<body>
+<header class="adm-top">
+  <strong>Panel de administración</strong>
+  <a href="index.html">← Volver al visor</a>
+</header>
+
+<div class="adm-wrap">
+  <nav class="adm-side" id="tabs">
+    <button data-tab="canchas">Canchas</button>
+    <button data-tab="analisis">Análisis GIS</button>
+    <button data-tab="eventos">Eventos</button>
+    <button data-tab="permisos" class="is-active">Permisos</button>
+  </nav>
+
+  <main class="adm-main">
+    <!-- Canchas / Análisis / Eventos: aquí se migra el código que hoy está en app.js -->
+    <section id="tab-canchas" class="oculto"><h1>Canchas</h1><p class="adm-pend">Pendiente de migrar desde app.js.</p></section>
+    <section id="tab-analisis" class="oculto"><h1>Análisis GIS</h1><p class="adm-pend">Pendiente de migrar desde app.js.</p></section>
+    <section id="tab-eventos" class="oculto"><h1>Eventos</h1><p class="adm-pend">Pendiente de migrar desde app.js.</p></section>
+
+    <section id="tab-permisos">
+      <h1>Permisos y administradores</h1>
+      <p class="modal-subtexto">Busca un participante con cualquiera de los filtros. Ninguno es obligatorio, pero debes usar al menos uno.</p>
+
+      <form id="form-buscar" class="adm-card">
+        <div class="adm-grid">
+          <div class="grupo-campo"><label for="f-rol">Tipo de participante</label>
+            <select id="f-rol" class="input-reserva">
+              <option value="">Todos</option><option value="user">Usuario</option><option value="admin">Administrador</option>
+            </select></div>
+          <div class="grupo-campo"><label for="f-nombre">Nombre</label><input id="f-nombre" class="input-reserva" placeholder="Ingrese nombre"></div>
+          <div class="grupo-campo"><label for="f-apellidos">Apellidos</label><input id="f-apellidos" class="input-reserva" placeholder="Ingrese apellidos"></div>
+          <div class="grupo-campo"><label for="f-telefono">Teléfono</label><input id="f-telefono" class="input-reserva" inputmode="tel" placeholder="Ingrese teléfono"></div>
+          <div class="grupo-campo"><label for="f-correo">Correo</label><input id="f-correo" class="input-reserva" placeholder="Ingrese correo"></div>
+        </div>
+        <div class="adm-actions">
+          <button type="submit" class="btn btn--primary">Buscar participante</button>
+          <button type="button" id="btn-limpiar" class="btn btn--ghost">Limpiar</button>
+        </div>
+        <p id="msg" class="form-mensaje"></p>
+      </form>
+
+      <div class="adm-card" id="resultados-card" hidden>
+        <strong id="resumen"></strong>
+        <div id="resultados"></div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const sb = window.supabase.createClient(
+  "https://vdltyryvmphxdcxjrgsf.supabase.co",
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZkbHR5cnl2bXBoeGRjeGpyZ3NmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc3NTU5NTgsImV4cCI6MjEwMzMzMTk1OH0.vxqi58vWcfbWqoRTs9-AhalTOJS5rkOGQKbGrCOb9WA" // la misma que usas en app.js
+);
+const $ = (id) => document.getElementById(id);
+let yoId = null;
+
+// --- Guardia: solo administradores ---
+(async () => {
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) return location.replace('index.html');
+  yoId = session.user.id;
+  const { data } = await sb.from('profiles').select('role').eq('id', yoId).single();
+  if (data?.role !== 'admin') return location.replace('index.html');
+})();
+
+// --- Pestañas ---
+$('tabs').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-tab]'); if (!b) return;
+  document.querySelectorAll('#tabs button').forEach(x => x.classList.toggle('is-active', x === b));
+  ['canchas','analisis','eventos','permisos'].forEach(t => $('tab-' + t).classList.toggle('oculto', t !== b.dataset.tab));
+});
+
+// --- Búsqueda ---
+// Quita caracteres que rompen el filtro .or() de PostgREST y escapa comodines de LIKE
+const limpiar = (s) => s.trim().replace(/[,()*%_\\]/g, ' ').replace(/\s+/g, ' ');
+
+$('form-buscar').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const f = {
+    role: $('f-rol').value,
+    nombre: limpiar($('f-nombre').value),
+    apellidos: limpiar($('f-apellidos').value),
+    telefono: limpiar($('f-telefono').value).replace(/\s/g, ''),
+    email: limpiar($('f-correo').value),
+  };
+  if (!Object.values(f).some(Boolean)) {
+    $('msg').style.color = '#b3382d';
+    $('msg').textContent = 'Usa al menos un filtro para buscar.';
+    return;
+  }
+  $('msg').textContent = '';
+
+  let q = sb.from('profiles').select('id, email, role, nombre, apellidos, telefono').order('email').limit(50);
+  if (f.role) q = q.eq('role', f.role);
+  if (f.nombre) q = q.ilike('nombre', `%${f.nombre}%`);
+  if (f.apellidos) q = q.ilike('apellidos', `%${f.apellidos}%`);
+  if (f.telefono) q = q.ilike('telefono', `%${f.telefono}%`);
+  if (f.email) q = q.ilike('email', `%${f.email}%`);
+
+  const { data, error } = await q;
+  if (error) { $('msg').style.color = '#b3382d'; $('msg').textContent = error.message; return; }
+  pintar(data || []);
+});
+
+$('btn-limpiar').addEventListener('click', () => {
+  $('form-buscar').reset(); $('msg').textContent = ''; $('resultados-card').hidden = true;
+});
+
+function pintar(lista) {
+  $('resultados-card').hidden = false;
+  $('resumen').textContent = lista.length ? `${lista.length} participante(s) encontrado(s)` : 'No se encontraron participantes.';
+  const cont = $('resultados'); cont.textContent = '';
+  lista.forEach(u => {
+    const fila = document.createElement('div'); fila.className = 'adm-user';
+    const info = document.createElement('div');
+    const nom = document.createElement('strong');
+    nom.textContent = [u.nombre, u.apellidos].filter(Boolean).join(' ') || '(sin nombre)';
+    const l1 = document.createElement('small'); l1.textContent = `${u.email || ''}${u.telefono ? ' · ' + u.telefono : ''}`;
+    const l2 = document.createElement('small'); l2.append('Rol: ');
+    const r = document.createElement('span'); r.className = 'rol ' + u.role; r.textContent = u.role === 'admin' ? 'ADMIN' : 'USUARIO';
+    l2.append(r);
+    info.append(nom, l1, l2);
+
+    const btn = document.createElement('button');
+    btn.className = 'btn btn--sm ' + (u.role === 'admin' ? 'btn--secondary' : 'btn--primary');
+    btn.textContent = u.role === 'admin' ? 'Hacer usuario' : 'Hacer admin';
+    if (u.id === yoId) { btn.disabled = true; btn.title = 'No puedes cambiar tu propio rol'; }
+    btn.addEventListener('click', () => cambiarRol(u, btn));
+    fila.append(info, btn); cont.append(fila);
+  });
+}
+
+async function cambiarRol(u, btn) {
+  const nuevo = u.role === 'admin' ? 'user' : 'admin';
+  if (!confirm(`¿Cambiar el rol de ${u.email} a ${nuevo === 'admin' ? 'administrador' : 'usuario'}?`)) return;
+  btn.disabled = true;
+  const { error } = await sb.from('profiles').update({ role: nuevo }).eq('id', u.id);
+  if (error) { alert('No se pudo cambiar el rol: ' + error.message); btn.disabled = false; return; }
+  $('form-buscar').requestSubmit(); // refresca resultados
+}
+</script>
+</body>
+</html>

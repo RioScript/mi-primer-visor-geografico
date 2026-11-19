@@ -335,6 +335,25 @@
             </div>
 
             <form id="form-auth" class="form-stack">
+                <!-- Solo se muestran al crear cuenta -->
+                <div class="solo-registro oculto">
+                    <div class="grupo-campo">
+                        <label for="auth-nombre">Nombres</label>
+                        <input type="text" id="auth-nombre" class="input-reserva" placeholder="Ej: Juan Sebastián"
+                            autocomplete="given-name" />
+                    </div>
+                    <div class="grupo-campo">
+                        <label for="auth-apellidos">Apellidos</label>
+                        <input type="text" id="auth-apellidos" class="input-reserva" placeholder="Ej: Alzate Gómez"
+                            autocomplete="family-name" />
+                    </div>
+                    <div class="grupo-campo">
+                        <label for="auth-telefono">Número de celular</label>
+                        <input type="tel" id="auth-telefono" class="input-reserva" placeholder="Ej: 3001234567"
+                            inputmode="tel" autocomplete="tel" />
+                    </div>
+                </div>
+
                 <div class="grupo-campo">
                     <label for="auth-email">Correo electrónico</label>
                     <input type="email" id="auth-email" class="input-reserva" placeholder="nombre@correo.com"
@@ -344,6 +363,11 @@
                     <label for="auth-password">Contraseña</label>
                     <input type="password" id="auth-password" class="input-reserva" placeholder="Mínimo 6 caracteres"
                         autocomplete="current-password" required />
+                </div>
+                <div class="grupo-campo solo-registro oculto">
+                    <label for="auth-password2">Confirmar contraseña</label>
+                    <input type="password" id="auth-password2" class="input-reserva"
+                        placeholder="Repite la contraseña" autocomplete="new-password" />
                 </div>
 
                 <button type="submit" id="btn-submit-auth" class="btn btn--primary btn--block">
@@ -380,7 +404,7 @@
                 <span class="status-indicator"></span>
                 <span>Servicio geográfico</span>
             </div>
-            <!-- Aquí se inserta el botón de administración cuando el usuario es admin -->
+            <!-- Aquí se inserta el enlace a administración cuando el usuario es admin -->
             <div id="header-acciones" class="header-slot"></div>
         </div>
 
@@ -906,7 +930,9 @@
         </aside>
     </div>
 
-    <!-- ============ PANEL DE ADMINISTRACIÓN ============ -->
+    <!-- ============ PANEL DE ADMINISTRACIÓN (ANTIGUO) ============ -->
+    <!-- Se conserva hasta migrar Canchas, Análisis GIS y Eventos a admin.html;
+         app.js todavía usa estos IDs. Después se puede borrar. -->
     <div id="admin-modal-overlay" class="modal-overlay oculto">
         <div class="modal-content modal-content--lg" role="dialog" aria-modal="true" aria-labelledby="admin-titulo">
             <button id="admin-modal-cerrar" type="button" class="modal-cerrar" aria-label="Cerrar">
@@ -926,8 +952,6 @@
 
             <!-- ===== Pestaña 1: canchas ===== -->
             <div id="admin-seccion-canchas">
-
-                <!-- Vista A: listado -->
                 <div id="admin-canchas-lista-vista">
                     <div class="admin-toolbar">
                         <label class="admin-buscar">
@@ -950,7 +974,6 @@
                     </div>
                 </div>
 
-                <!-- Vista B: formulario (crear y editar) -->
                 <div id="admin-cancha-form-vista" class="oculto">
                     <button type="button" id="btn-admin-volver-lista" class="link-btn admin-volver">← Volver al
                         listado</button>

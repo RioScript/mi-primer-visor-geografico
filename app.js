@@ -53,6 +53,7 @@ class MapViewer {
         this.marcadoresRuta = [];
         this.barrioSeleccionadoValor = '';
         this._canchaAdminEditando = null;
+        this._linkAtendido = false;
 
         // Variables de estado para capas
         this.modoEnfoqueActivo = false;
@@ -321,6 +322,7 @@ class MapViewer {
             if (tabLogin) tabLogin.classList.toggle('is-active', !registro);
             if (tabRegister) tabRegister.classList.toggle('is-active', registro);
             if (btnAuthText) btnAuthText.innerText = registro ? 'CREAR CUENTA' : 'INGRESAR AL VISOR';
+            document.querySelectorAll('.solo-registro').forEach(el => el.classList.toggle('oculto', !registro));
             mostrarMensaje('');
         };
 
@@ -373,16 +375,24 @@ class MapViewer {
 
                 try {
                     if (modoRegistro) {
+                        const nombre = document.getElementById('auth-nombre').value.trim();
+                        const apellidos = document.getElementById('auth-apellidos').value.trim();
+                        const telefono = document.getElementById('auth-telefono').value.replace(/\D/g, '');
+                        if (!nombre || !apellidos) return mostrarMensaje('❌ Escribe tu nombre completo.', '#b3382d');
+                        if (!/^3\d{9}$/.test(telefono)) return mostrarMensaje('❌ Celular inválido (10 dígitos, empieza por 3).', '#b3382d');
+                        if (password !== document.getElementById('auth-password2').value)
+                            return mostrarMensaje('❌ Las contraseñas no coinciden.', '#b3382d');
+
                         mostrarMensaje('Creando cuenta...', '#1c6ea4');
-                        const { data, error } = await this.supabase.auth.signUp({ email, password });
+                        const { data, error } = await this.supabase.auth.signUp({
+                            email,
+                            password,
+                            options: { data: { nombre, apellidos, telefono } }
+                        });
 
                         if (error) {
                             mostrarMensaje(`❌ ${error.message}`, '#b3382d');
                             return;
-                        }
-
-                        if (data?.user) {
-                            await this.supabase.from('profiles').upsert([{ id: data.user.id, email, role: 'user' }], { onConflict: 'id' });
                         }
 
                         if (data?.session) {
@@ -463,14 +473,8 @@ class MapViewer {
             if (slotAdmin && !document.getElementById('contenedor-btn-admin')) {
                 const divAdmin = document.createElement('div');
                 divAdmin.id = 'contenedor-btn-admin';
-                divAdmin.innerHTML = `
-                    <button id="btn-abrir-admin" type="button" class="btn btn--admin btn--sm">
-                        <svg class="icon"><use href="#i-shield"/></svg>
-                        Administración
-                    </button>
-                `;
+                divAdmin.innerHTML = `<a href="admin.html" class="btn btn--admin btn--sm">  <svg class="icon"><use href="#i-shield"/></svg>Administración</a>`;
                 slotAdmin.appendChild(divAdmin);
-                this.initAdminPanelEvents();
 
                 this.cargarZonasInfluenciaAdmin();
             }
@@ -1414,6 +1418,13 @@ class MapViewer {
         }
 
         setTimeout(() => this.map.invalidateSize(), 100);
+
+        const idLink = new URLSearchParams(location.search).get('cancha');
+        if (idLink && !this._linkAtendido) {
+            this._linkAtendido = true;
+            document.getElementById('intro-overlay')?.classList.add('fade-out');
+            this.enfocarCanchaPorId(idLink, true);
+        }
     }
 
     // --- Utilidades de presentación ---
