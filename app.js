@@ -104,6 +104,7 @@ class MapViewer {
         this.initControlCapasUI();
         this.initPanelesFlotantes();
         this.initMenuMovil();
+        this.initNavidad();
         this.cargarCapaGdalProcesada();
         this.initCargaEfectivaPorViewport();
 
@@ -845,6 +846,37 @@ class MapViewer {
         const alCambiar = (e) => { if (e.matches) fijar(false); };
         if (mq.addEventListener) mq.addEventListener('change', alCambiar);
         else if (mq.addListener) mq.addListener(alCambiar);
+    }
+
+        // --- Decoración navideña (gorro, copo y nieve) ---
+    // Para quitarla en enero: pon NAVIDAD_ACTIVA en false (o borra el <link> del CSS)
+    initNavidad() {
+        const NAVIDAD_ACTIVA = true;
+        if (!NAVIDAD_ACTIVA) return;
+
+        const gorro = `<svg class="navidad-gorro" viewBox="0 0 64 56" aria-hidden="true"><path d="M5 46 C8 22 26 8 46 9 C56 10 61 18 60 28 L56 46 Z" fill="#d62828"/><path d="M13 44 C15 28 27 15 42 13" fill="none" stroke="#a31515" stroke-width="3" stroke-linecap="round" opacity=".55"/><circle cx="60" cy="31" r="7.5" fill="#fff"/><rect x="1" y="40" width="62" height="14" rx="7" fill="#fff"/><rect x="1" y="40" width="62" height="14" rx="7" fill="none" stroke="#d9dee3" stroke-width="1"/></svg>`;
+        const copo = `<svg class="navidad-copo" viewBox="0 0 24 24" aria-hidden="true"><g id="copo-brazo"><path d="M12 2v20"/><path d="M9.2 4.6 12 7.4 14.8 4.6"/><path d="M9.2 19.4 12 16.6 14.8 19.4"/></g><use href="#copo-brazo" transform="rotate(60 12 12)"/><use href="#copo-brazo" transform="rotate(120 12 12)"/></svg>`;
+
+        // Gorro y copo en todos los logos (cabecera y pantalla de bienvenida)
+        document.querySelectorAll('.brand-logo').forEach(logo => {
+            if (!logo.querySelector('.navidad-gorro')) logo.insertAdjacentHTML('beforeend', gorro + copo);
+        });
+
+        // Nieve cayendo en la cabecera
+        const header = document.querySelector('.app-header');
+        if (header && !header.querySelector('.nieve')) {
+            const capa = document.createElement('div');
+            capa.className = 'nieve';
+            capa.setAttribute('aria-hidden', 'true');
+            const total = 20;
+            for (let i = 0; i < total; i++) {
+                const f = document.createElement('i');
+                const t = 5 + Math.random() * 4;
+                f.style.cssText = `left:${(i / total * 100 + Math.random() * 3).toFixed(1)}%;--s:${(2.5 + Math.random() * 3).toFixed(1)}px;--t:${t.toFixed(1)}s;--d:-${(Math.random() * t).toFixed(1)}s;--x:${(Math.random() * 24 - 12).toFixed(0)}px`;
+                capa.appendChild(f);
+            }
+            header.prepend(capa);
+        }
     }
 
     // --- Paneles flotantes del mapa (filtros y capas) ---

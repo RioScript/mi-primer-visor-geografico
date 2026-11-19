@@ -27,6 +27,25 @@
     --m-body: "Barlow", system-ui, -apple-system, "Segoe UI", sans-serif;
 }
 
+/* ==========================================================================
+   Tamaño del logo y altura de la cabecera (una sola fuente de verdad)
+   --logo-size : diámetro del círculo verde
+   --logo-room : espacio extra arriba (lo usa la decoración navideña; 0 en uso normal)
+   ========================================================================== */
+:root {
+    --logo-size: 72px;
+    --logo-room: 0px;
+    --header-pad: 20px;
+    --header-h: calc(var(--logo-size) + var(--header-pad) + var(--logo-room));
+}
+
+@media (max-width: 900px) {
+    :root {
+        --logo-size: 50px;
+        --header-pad: 12px;
+    }
+}
+
 body {
     background: var(--m-bg);
     overflow-x: hidden;
@@ -55,10 +74,31 @@ main,
 
 /* ---------- Cabecera ---------- */
 .app-header {
-    height: 60px;
+    height: var(--header-h);
     background: linear-gradient(180deg, #103d2b 0%, #0c3122 100%);
     border-bottom: 3px solid var(--m-linea);
     gap: 28px;
+}
+
+.app-header .brand .brand-logo {
+    position: relative;
+    flex: none;
+    overflow: visible;
+    width: var(--logo-size);
+    height: var(--logo-size);
+    margin-top: var(--logo-room);
+}
+
+.app-header .brand .brand-logo img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+/* El texto baja igual que el logo para seguir alineado */
+.app-header .brand-copy {
+    margin-top: var(--logo-room);
 }
 
 .app-header .brand-copy strong {
@@ -1045,13 +1085,9 @@ main,
 
 /* ---------- ≤ 900 px ---------- */
 @media (max-width: 900px) {
-    :root {
-        --header-h: 58px;
-    }
-
     /* Cabecera: marca a la izquierda, hamburguesa a la derecha */
     .app-header {
-        height: 58px;
+        height: var(--header-h);
         padding: 0 12px 0 14px;
         gap: 10px;
         flex-wrap: nowrap;
@@ -1062,9 +1098,9 @@ main,
         gap: 10px;
     }
 
-    .app-header .brand-logo {
-        width: 42px;
-        height: 42px;
+    .app-header .brand .brand-logo {
+        width: var(--logo-size);
+        height: var(--logo-size);
     }
 
     .app-header .brand-copy {
@@ -1565,7 +1601,7 @@ main,
 /* ---------- Teléfono en horizontal ---------- */
 @media (max-width: 900px) and (max-height: 520px) and (orientation: landscape) {
     :root {
-        --ws-h: calc(100dvh - 58px);
+        --ws-h: calc(100dvh - var(--header-h));
     }
 
     .map-ui__right {
