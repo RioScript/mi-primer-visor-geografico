@@ -910,6 +910,111 @@ main,
     font-size: .84rem;
 }
 
+/* ---------- Pie de página: desarrolladores ---------- */
+.footer-devs {
+    position: relative;
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 0 28px 36px;
+}
+
+.footer-devs__titulo {
+    margin-bottom: 14px;
+    padding-top: 26px;
+    border-top: 1px solid rgba(255, 255, 255, .14);
+    font-family: var(--m-head);
+    font-size: 1.6rem;
+    font-weight: 700;
+    letter-spacing: 0;
+    color: #f2f5f3;
+}
+
+.footer-devs__lista {
+    list-style: none;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+}
+
+.dev-card {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px 18px;
+    background: rgba(255, 255, 255, .05);
+    border: 1px solid rgba(255, 255, 255, .14);
+    border-left: 4px solid var(--m-linea);
+    border-radius: 6px;
+}
+
+.dev-card__inicial {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: rgba(240, 196, 25, .14);
+    border: 1px solid rgba(240, 196, 25, .4);
+    color: var(--m-linea);
+    font-family: var(--m-head);
+    font-size: 1.35rem;
+    font-weight: 700;
+}
+
+.dev-card__info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.dev-card__nombre {
+    font-family: var(--m-head);
+    font-size: 1.3rem;
+    font-weight: 600;
+    line-height: 1.1;
+    color: #f2f5f3;
+    overflow-wrap: anywhere;
+}
+
+.dev-card__rol {
+    color: #93a89d;
+    font-size: .9rem;
+}
+
+.dev-card__tel {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 6px;
+    color: var(--m-linea);
+    font-weight: 600;
+    font-size: 1rem;
+    text-decoration: none;
+}
+
+.dev-card__tel .icon {
+    width: 1em;
+    height: 1em;
+}
+
+.dev-card__tel:hover {
+    color: #fff;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+@media (max-width: 760px) {
+    .footer-devs {
+        padding: 0 16px 28px;
+    }
+
+    .footer-devs__lista {
+        grid-template-columns: 1fr;
+    }
+}
+
 /* ---------- Responsive ---------- */
 :root {
     --m-side-w: 360px;
@@ -1085,6 +1190,7 @@ main,
 
 /* ---------- ≤ 900 px ---------- */
 @media (max-width: 900px) {
+
     /* Cabecera: marca a la izquierda, hamburguesa a la derecha */
     .app-header {
         height: var(--header-h);
@@ -1854,7 +1960,11 @@ main,
     justify-content: center;
 }
 
-.cancha-card__acciones .btn .icon { width: 16px; height: 16px; flex: none; }
+.cancha-card__acciones .btn .icon {
+    width: 16px;
+    height: 16px;
+    flex: none;
+}
 
 .cancha-card__acciones .btn--primary {
     flex: 1.5;
@@ -1899,29 +2009,61 @@ main,
 }
 
 @media (max-width: 900px) {
-    .cards-canchas { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .cards-canchas {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
 }
 
 @media (max-width: 560px) {
-    .cards-canchas { grid-template-columns: minmax(0, 1fr); gap: 16px; }
-    .cancha-card__nombre { font-size: 1.45rem; }
+    .cards-canchas {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 16px;
+    }
+
+    .cancha-card__nombre {
+        font-size: 1.45rem;
+    }
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .cancha-card, .cancha-card__img img, .cancha-card__fav { transition: none; }
-    .cancha-card:hover { transform: none; }
+
+    .cancha-card,
+    .cancha-card__img img,
+    .cancha-card__fav {
+        transition: none;
+    }
+
+    .cancha-card:hover {
+        transform: none;
+    }
 }
 
 /* ==========================================================
    TARJETAS DE EVENTOS
    ========================================================== */
-.evento-card.evt--torneo { --acento: var(--m-linea); }
-.evento-card.evt--recreativo { --acento: #10b981; }
-.evento-card.evt--reto { --acento: #e4572e; }
+.evento-card.evt--torneo {
+    --acento: var(--m-linea);
+}
 
-.evento-card.evt--torneo .cancha-card__img { background: linear-gradient(135deg, #0d2a23, #1f7a4d 60%, #b8930a); }
-.evento-card.evt--recreativo .cancha-card__img { background: linear-gradient(135deg, #165c39, #2fa56a); }
-.evento-card.evt--reto .cancha-card__img { background: linear-gradient(135deg, #151c19, #7a2a14 70%, #e4572e); }
+.evento-card.evt--recreativo {
+    --acento: #10b981;
+}
+
+.evento-card.evt--reto {
+    --acento: #e4572e;
+}
+
+.evento-card.evt--torneo .cancha-card__img {
+    background: linear-gradient(135deg, #0d2a23, #1f7a4d 60%, #b8930a);
+}
+
+.evento-card.evt--recreativo .cancha-card__img {
+    background: linear-gradient(135deg, #165c39, #2fa56a);
+}
+
+.evento-card.evt--reto .cancha-card__img {
+    background: linear-gradient(135deg, #151c19, #7a2a14 70%, #e4572e);
+}
 
 .evento-card__icono {
     position: absolute;
@@ -1939,7 +2081,9 @@ main,
     stroke-width: 1.6;
 }
 
-.evento-card.evt--torneo .evento-card__icono { color: var(--m-linea); }
+.evento-card.evt--torneo .evento-card__icono {
+    color: var(--m-linea);
+}
 
 .evento-card__fecha {
     position: absolute;
@@ -1966,7 +2110,11 @@ main,
     overflow: hidden;
 }
 
-.evt-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.evt-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
 
 .evt-chip {
     padding: 3px 10px;
@@ -1992,7 +2140,9 @@ main,
     cursor: pointer;
 }
 
-#gol-overlay.gol-salida { animation: gol-fondo-out .4s ease both; }
+#gol-overlay.gol-salida {
+    animation: gol-fondo-out .4s ease both;
+}
 
 .gol-escena {
     position: relative;
@@ -2082,7 +2232,11 @@ main,
     animation: gol-fondo .5s ease 1.6s both;
 }
 
-.gol-confeti { position: absolute; inset: -60px -80px; pointer-events: none; }
+.gol-confeti {
+    position: absolute;
+    inset: -60px -80px;
+    pointer-events: none;
+}
 
 .gol-confeti i {
     position: absolute;
@@ -2096,25 +2250,118 @@ main,
     animation: gol-confeti 1.8s ease-in calc(1.2s + var(--d)) both;
 }
 
-@keyframes gol-fondo { from { opacity: 0; } to { opacity: 1; } }
-@keyframes gol-fondo-out { from { opacity: 1; } to { opacity: 0; } }
-@keyframes gol-arco-in { from { transform: translateY(-20px); opacity: 0; } to { transform: none; opacity: 1; } }
-@keyframes gol-tiro {
-    0%   { transform: translate(0, 0) scale(1) rotate(0); }
-    55%  { transform: translate(18px, -150px) scale(.62) rotate(540deg); }
-    70%  { transform: translate(6px, -170px) scale(.55) rotate(640deg); }
-    100% { transform: translate(0, -158px) scale(.5) rotate(720deg); }
+@keyframes gol-fondo {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
 }
-@keyframes gol-sombra { 0% { transform: scale(1); opacity: .5; } 100% { transform: scale(.3); opacity: 0; } }
-@keyframes gol-red { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.06, 1.1); } }
-@keyframes gol-texto { from { transform: scale(0) rotate(-8deg); opacity: 0; } to { transform: none; opacity: 1; } }
+
+@keyframes gol-fondo-out {
+    from {
+        opacity: 1;
+    }
+
+    to {
+        opacity: 0;
+    }
+}
+
+@keyframes gol-arco-in {
+    from {
+        transform: translateY(-20px);
+        opacity: 0;
+    }
+
+    to {
+        transform: none;
+        opacity: 1;
+    }
+}
+
+@keyframes gol-tiro {
+    0% {
+        transform: translate(0, 0) scale(1) rotate(0);
+    }
+
+    55% {
+        transform: translate(18px, -150px) scale(.62) rotate(540deg);
+    }
+
+    70% {
+        transform: translate(6px, -170px) scale(.55) rotate(640deg);
+    }
+
+    100% {
+        transform: translate(0, -158px) scale(.5) rotate(720deg);
+    }
+}
+
+@keyframes gol-sombra {
+    0% {
+        transform: scale(1);
+        opacity: .5;
+    }
+
+    100% {
+        transform: scale(.3);
+        opacity: 0;
+    }
+}
+
+@keyframes gol-red {
+
+    0%,
+    100% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.06, 1.1);
+    }
+}
+
+@keyframes gol-texto {
+    from {
+        transform: scale(0) rotate(-8deg);
+        opacity: 0;
+    }
+
+    to {
+        transform: none;
+        opacity: 1;
+    }
+}
+
 @keyframes gol-confeti {
-    0% { transform: translateY(0) rotate(var(--r)); opacity: 1; }
-    100% { transform: translateY(380px) rotate(calc(var(--r) + 540deg)); opacity: 0; }
+    0% {
+        transform: translateY(0) rotate(var(--r));
+        opacity: 1;
+    }
+
+    100% {
+        transform: translateY(380px) rotate(calc(var(--r) + 540deg));
+        opacity: 0;
+    }
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .gol-balon, .gol-sombra, .gol-confeti i, .gol-red { animation: none; }
-    .gol-confeti { display: none; }
-    .gol-balon { transform: translateY(-158px) scale(.5); }
+
+    .gol-balon,
+    .gol-sombra,
+    .gol-confeti i,
+    .gol-red {
+        animation: none;
+    }
+
+    .gol-confeti {
+        display: none;
+    }
+
+    .gol-balon {
+        transform: translateY(-158px) scale(.5);
+    }
 }
