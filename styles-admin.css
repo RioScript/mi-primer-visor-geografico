@@ -1370,3 +1370,164 @@
         max-width: 220px;
     }
 }
+
+/* ==========================================================================
+   Análisis GIS · alertas de desgaste
+   ========================================================================== */
+.btn.is-cargando .icon { animation: ga-gira .8s linear infinite; }
+
+.admin-vacio {
+    padding: 22px 14px;
+    text-align: center;
+    color: var(--ink-3);
+    font-size: .88rem;
+    border: 1px dashed var(--line);
+    border-radius: 10px;
+    background: #fff;
+}
+.admin-vacio--error { color: #b3382d; border-color: #f0c9c5; background: #fff6f5; }
+
+.alerta-skel {
+    height: 74px;
+    margin-bottom: 8px;
+    border-radius: 10px;
+    background: linear-gradient(100deg, #e8eeea 30%, #f6f9f7 50%, #e8eeea 70%) 0 0 / 220% 100%;
+    animation: ga-skel 1.1s linear infinite;
+}
+@keyframes ga-skel { to { background-position: -220% 0; } }
+
+.alerta-card {
+    --k: #3b82f6;
+    margin-bottom: 8px;
+    padding: 11px 14px 12px;
+    background: #fff;
+    border: 1px solid #dbe5df;
+    border-left: 5px solid var(--k);
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(13, 42, 35, .05);
+    animation: ga-sube .35s ease-out backwards;
+}
+.alerta-card--critica { --k: #dc2626; background: linear-gradient(90deg, #fff5f4, #fff 40%); }
+.alerta-card--media { --k: #f59e0b; background: linear-gradient(90deg, #fff9ec, #fff 40%); }
+.alerta-card__top { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.alerta-card__top b { display: inline-flex; align-items: center; gap: 6px; color: var(--ink); font-size: .92rem; }
+.alerta-card__top .icon { color: var(--k); }
+.alerta-card__fecha { color: var(--ink-3); font-size: .74rem; }
+.alerta-card p { margin: 4px 0 8px; color: var(--ink-2); font-size: .84rem; line-height: 1.35; }
+.alerta-card__chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.alerta-card__chips span {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 3px 10px; border-radius: 999px;
+    background: #eef3ef; color: var(--ink-2); font-size: .76rem; font-weight: 600;
+}
+.alerta-card__chips .icon { width: 13px; height: 13px; }
+
+/* ==========================================================================
+   Moderación de eventos
+   ========================================================================== */
+.admin-evt-barra { margin: 14px 0 10px; display: grid; gap: 10px; }
+.admin-evt-barra .admin-buscar { flex: none; }
+
+.admin-evt-chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.admin-evt-chips button {
+    padding: 6px 14px; border-radius: 999px; border: 1px solid var(--line);
+    background: #fff; color: var(--ink-2); font-size: .82rem; font-weight: 600;
+    transition: background .15s, color .15s, border-color .15s, transform .15s;
+}
+.admin-evt-chips button:hover { transform: translateY(-1px); border-color: var(--brand); }
+.admin-evt-chips button.is-on { background: var(--brand); border-color: var(--brand); color: #fff; box-shadow: 0 4px 10px rgba(15, 107, 79, .28); }
+
+.admin-evt-resumen { margin: 0; color: var(--ink-3); font-size: .82rem; }
+.admin-evt-resumen b { color: var(--ink); }
+.admin-evt-resumen b.ok { color: #0b7a4f; }
+.admin-evt-resumen b.fin { color: #b3382d; }
+
+#admin-lista-eventos { max-height: 440px; margin-top: 0; padding-right: 4px; }
+
+.admin-evt {
+    --k: #10b981;
+    display: grid;
+    grid-template-columns: 92px 1fr auto;
+    gap: 14px;
+    align-items: center;
+    margin-bottom: 10px;
+    padding: 10px 14px 10px 10px;
+    background: #fff;
+    border: 1px solid #dbe5df;
+    border-bottom: 4px solid var(--k);
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(13, 42, 35, .05);
+    animation: ga-sube .35s ease-out backwards;
+    transition: transform .18s, box-shadow .2s;
+}
+.admin-evt:hover { transform: translateY(-2px); box-shadow: 0 10px 22px rgba(13, 42, 35, .12); }
+.admin-evt--torneo { --k: #f0c419; }
+.admin-evt--reto { --k: #e4572e; }
+.admin-evt.is-fin { opacity: .78; }
+.admin-evt.is-fin .admin-evt__media { filter: grayscale(.55); }
+
+.admin-evt__media {
+    position: relative;
+    display: grid;
+    place-items: center;
+    height: 64px;
+    overflow: hidden;
+    border-radius: 9px;
+    color: #fff;
+    background:
+        linear-gradient(rgba(255,255,255,.28), rgba(255,255,255,.28)) center / 1.5px 100% no-repeat,
+        linear-gradient(135deg, #165c39, #2fa56a);
+}
+.admin-evt--torneo .admin-evt__media { background: linear-gradient(135deg, #0d2a23, #1f7a4d 60%, #b8930a); color: #f0c419; }
+.admin-evt--reto .admin-evt__media { background: linear-gradient(135deg, #151c19, #7a2a14 70%, #e4572e); }
+.admin-evt__media .icon { width: 28px; height: 28px; stroke-width: 1.7; }
+.admin-evt__media img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+
+.admin-evt__cuerpo { min-width: 0; }
+.admin-evt__tit { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.admin-evt__tit strong {
+    font-family: var(--m-head, inherit);
+    font-size: 1.15rem;
+    font-weight: 700;
+    line-height: 1.1;
+    color: var(--ink);
+}
+.admin-evt__pill { padding: 2px 9px; border-radius: 999px; font-size: .68rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
+.admin-evt__pill.is-activo { background: #dcf5e8; color: #0b7a4f; }
+.admin-evt__pill.is-fin { background: #fbe9e7; color: #b3382d; }
+
+.admin-evt__meta { display: flex; flex-wrap: wrap; gap: 4px 12px; margin-top: 6px; color: var(--ink-2); font-size: .8rem; }
+.admin-evt__meta span { display: inline-flex; align-items: center; gap: 5px; }
+.admin-evt__meta .icon { width: 13px; height: 13px; color: var(--ink-3); }
+.admin-evt__tipo { padding: 1px 8px; border-radius: 4px; background: var(--k); color: #11261f; font-weight: 700; font-size: .72rem; text-transform: uppercase; letter-spacing: .05em; }
+.admin-evt--reto .admin-evt__tipo { color: #fff; }
+
+.admin-evt__borrar { white-space: nowrap; }
+
+@media (max-width: 640px) {
+    .admin-evt { grid-template-columns: 64px 1fr; }
+    .admin-evt__media { height: 52px; }
+    .admin-evt__borrar { grid-column: 1 / -1; width: 100%; }
+}
+
+/* ==========================================================================
+   Rendimiento: las secciones fuera de pantalla no se dibujan hasta que se ven,
+   y las animaciones decorativas se pausan cuando hay algo encima.
+   ========================================================================== */
+#canchas, #eventos, .app-footer {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 900px;
+}
+
+body:has(#intro-overlay:not(.oculto):not(.fade-out)) .app-header *,
+body:has(#intro-overlay:not(.oculto):not(.fade-out)) .map-ui__left {
+    animation-play-state: paused !important;
+}
+body:has(#modal-overlay:not(.oculto)) .map-ui__left,
+body:has(#admin-modal-overlay:not(.oculto)) .map-ui__left,
+body:has(#admin-modal-overlay:not(.oculto)) .app-header * {
+    animation-play-state: paused !important;
+}
+@media (prefers-reduced-motion: reduce) {
+    .alerta-skel, .alerta-card, .admin-evt { animation: none; }
+}

@@ -104,7 +104,6 @@ class MapViewer {
         this.initControlCapasUI();
         this.initPanelesFlotantes();
         this.initMenuMovil();
-        this.initNavidad();
         this.cargarCapaGdalProcesada();
         this.initCargaEfectivaPorViewport();
 
@@ -846,37 +845,6 @@ class MapViewer {
         const alCambiar = (e) => { if (e.matches) fijar(false); };
         if (mq.addEventListener) mq.addEventListener('change', alCambiar);
         else if (mq.addListener) mq.addListener(alCambiar);
-    }
-
-        // --- Decoración navideña (gorro, copo y nieve) ---
-    // Para quitarla en enero: pon NAVIDAD_ACTIVA en false (o borra el <link> del CSS)
-    initNavidad() {
-        const NAVIDAD_ACTIVA = true;
-        if (!NAVIDAD_ACTIVA) return;
-
-        const gorro = `<svg class="navidad-gorro" viewBox="0 0 64 56" aria-hidden="true"><path d="M5 46 C8 22 26 8 46 9 C56 10 61 18 60 28 L56 46 Z" fill="#d62828"/><path d="M13 44 C15 28 27 15 42 13" fill="none" stroke="#a31515" stroke-width="3" stroke-linecap="round" opacity=".55"/><circle cx="60" cy="31" r="7.5" fill="#fff"/><rect x="1" y="40" width="62" height="14" rx="7" fill="#fff"/><rect x="1" y="40" width="62" height="14" rx="7" fill="none" stroke="#d9dee3" stroke-width="1"/></svg>`;
-        const copo = `<svg class="navidad-copo" viewBox="0 0 24 24" aria-hidden="true"><g id="copo-brazo"><path d="M12 2v20"/><path d="M9.2 4.6 12 7.4 14.8 4.6"/><path d="M9.2 19.4 12 16.6 14.8 19.4"/></g><use href="#copo-brazo" transform="rotate(60 12 12)"/><use href="#copo-brazo" transform="rotate(120 12 12)"/></svg>`;
-
-        // Gorro y copo en todos los logos (cabecera y pantalla de bienvenida)
-        document.querySelectorAll('.brand-logo').forEach(logo => {
-            if (!logo.querySelector('.navidad-gorro')) logo.insertAdjacentHTML('beforeend', gorro + copo);
-        });
-
-        // Nieve cayendo en la cabecera
-        const header = document.querySelector('.app-header');
-        if (header && !header.querySelector('.nieve')) {
-            const capa = document.createElement('div');
-            capa.className = 'nieve';
-            capa.setAttribute('aria-hidden', 'true');
-            const total = 20;
-            for (let i = 0; i < total; i++) {
-                const f = document.createElement('i');
-                const t = 5 + Math.random() * 4;
-                f.style.cssText = `left:${(i / total * 100 + Math.random() * 3).toFixed(1)}%;--s:${(2.5 + Math.random() * 3).toFixed(1)}px;--t:${t.toFixed(1)}s;--d:-${(Math.random() * t).toFixed(1)}s;--x:${(Math.random() * 24 - 12).toFixed(0)}px`;
-                capa.appendChild(f);
-            }
-            header.prepend(capa);
-        }
     }
 
     // --- Paneles flotantes del mapa (filtros y capas) ---
@@ -3060,6 +3028,17 @@ class MapViewer {
         const contenedor = document.getElementById('lista-alertas-desgaste');
         if (!contenedor) return;
 
+        // Feedback visual: el botón gira y la lista muestra un "esqueleto" mientras consulta
+        const boton = document.querySelector('[onclick*="cargarAlertasDesgasteAdmin"]');
+        const textoOriginal = boton ? boton.innerHTML : '';
+        if (boton) {
+            boton.disabled = true;
+            boton.classList.add('is-cargando');
+            boton.innerHTML = '<svg class="icon"><use href="#i-refresh"/></svg> Consultando…';
+        }
+        contenedor.innerHTML = '<div class="alerta-skel"></div><div class="alerta-skel"></div><div class="alerta-skel"></div>';
+
+        const inicio = Date.now();
         const { data, error } = await this.supabase
             .from('alertas_desgaste')
             .select(`
@@ -3073,37 +3052,56 @@ class MapViewer {
             .order('fecha_alerta', { ascending: false })
             .limit(10);
 
+        // Que la animación se alcance a ver aunque la respuesta sea instantánea
+        const espera = 500 - (Date.now() - inicio);
+        if (espera > 0) await new Promise(r => setTimeout(r, espera));
+
+        if (boton) {
+            boton.disabled = false;
+            boton.classList.remove('is-cargando');
+            boton.innerHTML = textoOriginal;
+        }
+
         if (error) {
             console.error("Error cargando alertas de desgaste:", error);
-            contenedor.innerHTML = '<p style="color: #ef4444;">Error al cargar las alertas de desgaste.</p>';
+            contenedor.innerHTML = '<p class="admin-vacio admin-vacio--error">No se pudieron cargar las alertas de desgaste.</p>';
+            this.toast('❌ No se pudieron cargar las alertas.');
             return;
         }
 
         if (!data || data.length === 0) {
-            contenedor.innerHTML = '<p style="color: #94a3b8; font-size: 0.85rem;">No hay registros de desgaste o alertas generadas aún.</p>';
+            contenedor.innerHTML = '<p class="admin-vacio">Aún no hay alertas de desgaste registradas.</p>';
+            this.toast('Sin alertas nuevas por ahora.', 'aviso');
             return;
         }
 
-        let html = '<div style="display: flex; flex-direction: column; gap: 8px;">';
-        data.forEach(alerta => {
-            const nombreCancha = alerta.canchas ? alerta.canchas.nombre : 'Cancha desconocida';
-            const fechaFormateada = new Date(alerta.fecha_alerta).toLocaleString();
+        const nivel = (txt) => {
+            const t = String(txt || '').toUpperCase();
+            if (t.includes('CRÍTICO') || t.includes('CRITICO')) return 'critica';
+            if (t.includes('MEDIO') || t.includes('MODERADO') || t.includes('ALTO')) return 'media';
+            return 'baja';
+        };
 
-            html += `
-                <div style="background: #1e293b; padding: 10px; border-radius: 6px; border-left: 4px solid #3b82f6; font-size: 0.85rem;">
-                    <b style="color: #f8fafc;">📍 ${nombreCancha}</b><br>
-                    <span style="color: #cbd5e1;">${alerta.nivel_alerta}</span><br>
-                    <span style="color: #94a3b8; font-size: 0.75rem;">
-                        👥 Participantes: <b>${alerta.total_participantes}</b> | 
-                        🛣️ Distancia a vía: <b>${alerta.distancia_via_principal_m} m</b> | 
-                        🕒 ${fechaFormateada}
-                    </span>
+        contenedor.innerHTML = '';
+        data.forEach((alerta, i) => {
+            const nombreCancha = this.escaparHtml(alerta.canchas ? alerta.canchas.nombre : 'Cancha desconocida');
+            const fecha = alerta.fecha_alerta ? new Date(alerta.fecha_alerta).toLocaleString('es-CO') : '';
+            const card = document.createElement('div');
+            card.className = `alerta-card alerta-card--${nivel(alerta.nivel_alerta)}`;
+            card.style.animationDelay = `${i * 40}ms`;
+            card.innerHTML = `
+                <div class="alerta-card__top">
+                    <b><svg class="icon"><use href="#i-pin"/></svg>${nombreCancha}</b>
+                    <span class="alerta-card__fecha">${this.escaparHtml(fecha)}</span>
                 </div>
-            `;
+                <p>${this.escaparHtml(alerta.nivel_alerta)}</p>
+                <div class="alerta-card__chips">
+                    <span><svg class="icon"><use href="#i-users"/></svg>${Number(alerta.total_participantes) || 0} participantes</span>
+                    <span><svg class="icon"><use href="#i-road"/></svg>${this.escaparHtml(alerta.distancia_via_principal_m)} m a la vía</span>
+                </div>`;
+            contenedor.appendChild(card);
         });
-        html += '</div>';
-
-        contenedor.innerHTML = html;
+        this.toast(`Alertas actualizadas (${data.length}).`, 'ok');
     }
 
     initCalificacionesEvents() {
@@ -3220,34 +3218,124 @@ class MapViewer {
     async cargarDatosAdminEventos() {
         const contenedor = document.getElementById('admin-lista-eventos');
         if (!contenedor) return;
-        contenedor.innerHTML = '<p class="modal-subtexto">Cargando eventos...</p>';
+        contenedor.innerHTML = '<div class="alerta-skel"></div><div class="alerta-skel"></div><div class="alerta-skel"></div>';
 
         const { data, error } = await this.supabase.from('eventos').select('*');
-        if (error || !data || data.length === 0) {
-            contenedor.innerHTML = '<p class="modal-subtexto">No hay eventos activos.</p>';
+        if (error) {
+            console.error(error);
+            contenedor.innerHTML = '<p class="admin-vacio admin-vacio--error">No se pudieron cargar los eventos.</p>';
+            return;
+        }
+        this.adminEventos = data || [];
+        if (!this.adminEventosFiltro) this.adminEventosFiltro = { texto: '', estado: 'todos' };
+        this.prepararBarraAdminEventos();
+        this.renderizarAdminEventos();
+    }
+
+    // Barra de búsqueda y filtros (se crea una sola vez)
+    prepararBarraAdminEventos() {
+        const seccion = document.getElementById('admin-seccion-eventos');
+        const lista = document.getElementById('admin-lista-eventos');
+        if (!seccion || !lista || document.getElementById('admin-eventos-barra')) return;
+
+        const barra = document.createElement('div');
+        barra.id = 'admin-eventos-barra';
+        barra.className = 'admin-evt-barra';
+        barra.innerHTML = `
+            <label class="admin-buscar">
+                <svg class="icon"><use href="#i-search"/></svg>
+                <input type="search" id="admin-eventos-buscar" placeholder="Buscar por nombre, cancha o contacto" autocomplete="off" aria-label="Buscar evento">
+            </label>
+            <div class="admin-evt-chips" role="group" aria-label="Filtrar por estado">
+                <button type="button" class="is-on" data-estado="todos">Todos</button>
+                <button type="button" data-estado="activo">Activos</button>
+                <button type="button" data-estado="finalizado">Finalizados</button>
+            </div>
+            <p id="admin-eventos-resumen" class="admin-evt-resumen"></p>`;
+        lista.parentNode.insertBefore(barra, lista);
+
+        barra.querySelector('#admin-eventos-buscar').addEventListener('input', (e) => {
+            this.adminEventosFiltro.texto = e.target.value.trim().toLowerCase();
+            this.renderizarAdminEventos();
+        });
+        barra.querySelectorAll('[data-estado]').forEach(b => b.addEventListener('click', () => {
+            this.adminEventosFiltro.estado = b.dataset.estado;
+            barra.querySelectorAll('[data-estado]').forEach(x => x.classList.toggle('is-on', x === b));
+            this.renderizarAdminEventos();
+        }));
+    }
+
+    renderizarAdminEventos() {
+        const contenedor = document.getElementById('admin-lista-eventos');
+        if (!contenedor) return;
+        const f = this.adminEventosFiltro || { texto: '', estado: 'todos' };
+        const todos = this.adminEventos || [];
+
+        const tipos = {
+            'Torneo': { clase: 'torneo', icono: '#i-trophy', etiqueta: 'Torneo' },
+            'Partido Recreativo': { clase: 'recreativo', icono: '#i-users', etiqueta: 'Recreativo' },
+            'Reto / Apostado': { clase: 'reto', icono: '#i-target', etiqueta: 'Reto' }
+        };
+
+        const lista = todos.filter(ev => {
+            const activo = this.esEventoActivo(ev);
+            if (f.estado === 'activo' && !activo) return false;
+            if (f.estado === 'finalizado' && activo) return false;
+            if (!f.texto) return true;
+            const cancha = (this.datosCanchas || []).find(c => c.id == ev.cancha_id);
+            const pajar = [ev.titulo, ev.tipo_evento, ev.contacto, ev.descripcion, cancha?.nombre].join(' ').toLowerCase();
+            return pajar.includes(f.texto);
+        });
+
+        const resumen = document.getElementById('admin-eventos-resumen');
+        if (resumen) {
+            const activos = todos.filter(ev => this.esEventoActivo(ev)).length;
+            resumen.innerHTML = `<b>${todos.length}</b> en total · <b class="ok">${activos}</b> activos · <b class="fin">${todos.length - activos}</b> finalizados`;
+        }
+
+        if (lista.length === 0) {
+            contenedor.innerHTML = '<p class="admin-vacio">No hay eventos que coincidan con la búsqueda.</p>';
             return;
         }
 
         contenedor.innerHTML = '';
-        data.forEach(ev => {
-            const div = document.createElement('div');
-            div.className = 'row-card';
+        lista.forEach((ev, i) => {
+            const t = tipos[ev.tipo_evento] || { clase: 'recreativo', icono: '#i-users', etiqueta: ev.tipo_evento || 'Evento' };
+            const activo = this.esEventoActivo(ev);
+            const cancha = (this.datosCanchas || []).find(c => c.id == ev.cancha_id);
+            const titulo = this.escaparHtml(ev.titulo || ev.tipo_evento || 'Evento');
+            let cuando = '';
+            if (ev.tipo_evento === 'Torneo' && ev.fecha_inicio) {
+                cuando = this.formatearFechaEvento(ev.fecha_inicio);
+                if (ev.fecha_fin && ev.fecha_fin !== ev.fecha_inicio) cuando += ' → ' + this.formatearFechaEvento(ev.fecha_fin);
+            } else if (ev.fecha_hora) cuando = this.formatearFechaEvento(ev.fecha_hora);
 
-            const estaActivo = this.esEventoActivo(ev);
-            const badgeEstado = estaActivo
-                ? '<span style="color: #34d399; font-size: 0.7rem; font-weight: normal; margin-left: 5px;">(Activo)</span>'
-                : '<span style="color: #ef4444; font-size: 0.7rem; font-weight: normal; margin-left: 5px;">(Finalizado)</span>';
+            const media = ev.banner_url
+                ? `<img src="${this.escaparHtml(ev.banner_url)}" alt="" loading="lazy" decoding="async" onerror="this.remove()">`
+                : '';
 
-            const titulo = ev.titulo || ev.tipo_evento;
-
-            div.innerHTML = `
-                <div>
-                    <strong style="color: #38bdf8; font-size: 0.85rem;">${titulo} ${badgeEstado}</strong>
-                    <p style="font-size: 0.75rem; color: #cbd5e1; margin: 0;">📞 ${ev.contacto}</p>
+            const fila = document.createElement('article');
+            fila.className = `admin-evt admin-evt--${t.clase}${activo ? '' : ' is-fin'}`;
+            fila.style.animationDelay = `${Math.min(i, 8) * 35}ms`;
+            fila.innerHTML = `
+                <div class="admin-evt__media"><svg class="icon"><use href="${t.icono}"/></svg>${media}</div>
+                <div class="admin-evt__cuerpo">
+                    <div class="admin-evt__tit">
+                        <strong>${titulo}</strong>
+                        <span class="admin-evt__pill ${activo ? 'is-activo' : 'is-fin'}">${activo ? 'Activo' : 'Finalizado'}</span>
+                    </div>
+                    <div class="admin-evt__meta">
+                        <span class="admin-evt__tipo">${this.escaparHtml(t.etiqueta)}</span>
+                        <span><svg class="icon"><use href="#i-pin"/></svg>${this.escaparHtml(cancha?.nombre || 'Cancha sin identificar')}</span>
+                        ${cuando ? `<span><svg class="icon"><use href="#i-check"/></svg>${this.escaparHtml(cuando)}</span>` : ''}
+                        <span><svg class="icon"><use href="#i-users"/></svg>${this.escaparHtml(ev.contacto || 'Sin contacto')}</span>
+                    </div>
                 </div>
-                <button onclick="window.mapApp.eliminarEventoAdmin(${ev.id})" style="background: #dc2626; color: white; border: none; padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; cursor: pointer;">🗑️ Borrar</button>
-            `;
-            contenedor.appendChild(div);
+                <button type="button" class="btn btn--peligro-suave btn--sm admin-evt__borrar" aria-label="Borrar ${titulo}">
+                    <svg class="icon"><use href="#i-x"/></svg>Borrar
+                </button>`;
+            fila.querySelector('.admin-evt__borrar').addEventListener('click', () => this.eliminarEventoAdmin(ev.id));
+            contenedor.appendChild(fila);
         });
     }
 
@@ -3259,9 +3347,15 @@ class MapViewer {
         );
         if (!ok) return;
 
-        const { error } = await this.supabase.from('eventos').delete().eq('id', eventoId);
+        // .select() devuelve las filas borradas: si viene vacío, la base de datos lo bloqueó (políticas RLS)
+        const { data, error } = await this.supabase.from('eventos').delete().eq('id', eventoId).select();
         if (error) {
-            this.toast('❌ Error al eliminar el evento.');
+            console.error(error);
+            this.toast('❌ Error al eliminar: ' + (error.message || 'desconocido'));
+            return;
+        }
+        if (!data || data.length === 0) {
+            this.toast('❌ La base de datos no permitió borrar el evento (revisa las políticas de la tabla eventos).');
             return;
         }
 
