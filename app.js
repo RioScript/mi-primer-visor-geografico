@@ -1525,11 +1525,23 @@ class MapViewer {
 
         setTimeout(() => this.map.invalidateSize(), 100);
 
-        const idLink = new URLSearchParams(location.search).get('cancha');
+        const paramsLink = new URLSearchParams(location.search);
+        const idLink = paramsLink.get('cancha');
+        const eventoLink = paramsLink.get('evento');
         if (idLink && !this._linkAtendido && !this._modoSeleccionAdminActivo) {
             this._linkAtendido = true;
             document.getElementById('intro-overlay')?.classList.add('fade-out');
-            this.enfocarCanchaPorId(idLink, true);
+            this.enfocarCanchaPorId(idLink, true).then(() => {
+                if (eventoLink) {
+                    setTimeout(async () => {
+                        const seccion = document.getElementById('seccion-eventos-hub');
+                        if (seccion) {
+                            seccion.classList.remove('oculto');
+                            await this.cargarEventosCancha(this.canchaSeleccionadaId);
+                        }
+                    }, 650);
+                }
+            });
         }
     }
 
