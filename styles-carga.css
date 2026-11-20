@@ -1,0 +1,211 @@
+/* ==========================================================================
+   Pantalla de carga del visor · estadio nocturno con jugador y balón
+   ========================================================================== */
+body.carga-activa { overflow: hidden; }
+
+.carga {
+    position: fixed;
+    inset: 0;
+    z-index: 32000;               /* sobre la bienvenida (30000) y el acceso (31000) */
+    display: grid;
+    place-items: center;
+    padding: 20px;
+    overflow: hidden;
+    color: #fff;
+    font-family: "Barlow", system-ui, -apple-system, "Segoe UI", sans-serif;
+    background:
+        radial-gradient(circle at 50% 32%, rgba(47, 158, 120, .32) 0%, rgba(13, 42, 35, .97) 72%),
+        #071a14;
+    animation: carga-entra .25s ease-out both;
+    transition: opacity .45s ease, transform .45s ease;
+}
+.carga--sale { opacity: 0; transform: scale(1.03); pointer-events: none; }
+
+@keyframes carga-entra { from { opacity: 0; } }
+
+/* Marcas de cancha de fondo (círculo central + línea media + cuadrícula) */
+.carga__lineas {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background:
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 800 500' fill='none' stroke='%23ffffff' stroke-opacity='.07' stroke-width='3'%3E%3Ccircle cx='400' cy='250' r='120'/%3E%3Ccircle cx='400' cy='250' r='5' fill='%23ffffff' fill-opacity='.1'/%3E%3Cpath d='M400 0V500'/%3E%3Cpath d='M0 150H110V350H0M800 150H690V350H800'/%3E%3C/svg%3E") center / cover no-repeat,
+        linear-gradient(rgba(255, 255, 255, .03) 1px, transparent 1px) 0 0 / 70px 70px,
+        linear-gradient(90deg, rgba(255, 255, 255, .03) 1px, transparent 1px) 0 0 / 70px 70px;
+}
+
+.carga__centro {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: min(380px, 100%);
+    text-align: center;
+}
+
+.carga__logo {
+    width: 74px;
+    height: 74px;
+    object-fit: contain;
+    margin-bottom: 2px;
+    filter: drop-shadow(0 6px 14px rgba(0, 0, 0, .45));
+}
+
+/* ---------- Escena ---------- */
+.carga__escena { width: min(330px, 86vw); height: auto; overflow: visible; }
+
+.carga__escena g, .carga__escena line, .carga__escena ellipse {
+    transform-box: view-box;
+}
+
+/* Suelo y viento: se desplazan hacia atrás para dar sensación de carrera */
+.cg-suelo { animation: cg-suelo .55s linear infinite; }
+@keyframes cg-suelo { to { stroke-dashoffset: 38; } }
+
+.cg-viento path { animation: cg-viento .9s linear infinite; opacity: 0; }
+.cg-viento path:nth-child(2) { animation-delay: .3s; }
+.cg-viento path:nth-child(3) { animation-delay: .6s; }
+@keyframes cg-viento {
+    0%   { transform: translateX(26px); opacity: 0; }
+    25%  { opacity: 1; }
+    100% { transform: translateX(-26px); opacity: 0; }
+}
+
+/* Jugador: leve rebote vertical y sombra que "respira" */
+.cg-jugador { animation: cg-bota .31s ease-in-out infinite alternate; transform-origin: 150px 146px; }
+@keyframes cg-bota { from { transform: translateY(0); } to { transform: translateY(-4px); } }
+.cg-sombra { transform-origin: 150px 147px; animation: cg-sombra .31s ease-in-out infinite alternate; }
+@keyframes cg-sombra { from { transform: scaleX(1); opacity: 1; } to { transform: scaleX(.86); opacity: .75; } }
+
+/* Zancada: un ciclo completo dura .62 s; la otra pierna va desfasada medio ciclo */
+.cg-muslo { transform-origin: 150px 76px; animation: cg-muslo .62s linear infinite; }
+.cg-muslo--b { animation-delay: -.31s; }
+.cg-pierna { transform-origin: 150px 104px; animation: cg-pierna .62s linear infinite; }
+.cg-muslo--b .cg-pierna { animation-delay: -.31s; }
+
+@keyframes cg-muslo {
+    0%   { transform: rotate(-52deg); }
+    25%  { transform: rotate(0deg); }
+    50%  { transform: rotate(34deg); }
+    75%  { transform: rotate(-12deg); }
+    100% { transform: rotate(-52deg); }
+}
+@keyframes cg-pierna {
+    0%   { transform: rotate(6deg); }
+    25%  { transform: rotate(22deg); }
+    50%  { transform: rotate(26deg); }
+    75%  { transform: rotate(104deg); }
+    100% { transform: rotate(6deg); }
+}
+
+/* Brazos: oscilan al contrario que las piernas, codo flexionado */
+.cg-brazo { transform-origin: 158px 42px; animation: cg-brazo .62s ease-in-out infinite alternate; }
+.cg-brazo--a { animation-delay: 0s; }
+.cg-brazo--b { animation-direction: alternate-reverse; opacity: .85; }
+.cg-antebrazo { transform-origin: 158px 62px; transform: rotate(-70deg); }
+@keyframes cg-brazo { from { transform: rotate(-48deg); } to { transform: rotate(46deg); } }
+
+/* Balón: va y viene delante de los pies, rebota y gira */
+.cg-balon-pos { animation: cg-conduccion .62s ease-in-out infinite; transform: translate(206px, 134px); }
+@keyframes cg-conduccion {
+    0%   { transform: translate(196px, 134px); }
+    50%  { transform: translate(226px, 134px); }
+    100% { transform: translate(196px, 134px); }
+}
+.cg-balon-bota { animation: cg-rebote .31s ease-out infinite alternate; }
+@keyframes cg-rebote { from { transform: translateY(0); } to { transform: translateY(-9px); } }
+.cg-balon { animation: cg-giro .62s linear infinite; }
+@keyframes cg-giro { to { transform: rotate(360deg); } }
+
+/* ---------- Texto y barra ---------- */
+.carga__titulo {
+    margin: 6px 0 0;
+    font-family: "Barlow Condensed", "Arial Narrow", sans-serif;
+    font-size: 2rem;
+    font-weight: 600;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+}
+.carga__puntos i { font-style: normal; animation: cg-punto 1.2s infinite; opacity: .2; }
+.carga__puntos i:nth-child(2) { animation-delay: .2s; }
+.carga__puntos i:nth-child(3) { animation-delay: .4s; }
+@keyframes cg-punto { 30% { opacity: 1; } }
+
+.carga__pct {
+    margin: 2px 0 12px;
+    font-family: "Barlow Condensed", sans-serif;
+    font-size: 2.6rem;
+    font-weight: 800;
+    line-height: 1;
+    color: #f0c419;
+    font-variant-numeric: tabular-nums;
+    text-shadow: 0 3px 0 rgba(22, 92, 57, .8);
+}
+.carga__pct b { font-weight: 800; }
+
+.carga__barra {
+    position: relative;
+    width: min(300px, 86vw);
+    height: 14px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, .12);
+    border: 1px solid rgba(255, 255, 255, .22);
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, .35);
+}
+.carga__relleno {
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 0;
+    border-radius: 999px;
+    background:
+        repeating-linear-gradient(115deg, rgba(255, 255, 255, .28) 0 8px, transparent 8px 16px) 0 0 / 32px 100%,
+        linear-gradient(90deg, #1f7a4d, #f0c419);
+    animation: cg-franjas .7s linear infinite;
+    box-shadow: 0 0 14px rgba(240, 196, 25, .45);
+}
+@keyframes cg-franjas { to { background-position: 32px 0, 0 0; } }
+
+/* Balón diminuto que rueda en la punta de la barra */
+.carga__bola {
+    position: absolute;
+    right: -9px;
+    top: 50%;
+    width: 20px;
+    height: 20px;
+    margin-top: -10px;
+    border-radius: 50%;
+    background:
+        radial-gradient(circle at 50% 50%, #11261f 0 3.4px, transparent 4px),
+        radial-gradient(circle at 22% 30%, #11261f 0 2.4px, transparent 3px),
+        radial-gradient(circle at 78% 30%, #11261f 0 2.4px, transparent 3px),
+        radial-gradient(circle at 28% 82%, #11261f 0 2.4px, transparent 3px),
+        radial-gradient(circle at 72% 82%, #11261f 0 2.4px, transparent 3px),
+        #fff;
+    border: 1.5px solid #11261f;
+    box-shadow: 0 3px 6px rgba(0, 0, 0, .4);
+    animation: cg-giro .7s linear infinite;
+}
+
+.carga__frase {
+    min-height: 1.4em;
+    margin: 14px 0 0;
+    color: #a9c7bb;
+    font-size: .92rem;
+    letter-spacing: .02em;
+}
+.carga--listo .carga__frase { color: #f0c419; font-weight: 700; }
+.carga--listo .carga__relleno { animation: none; }
+
+@media (max-height: 560px) {
+    .carga__logo { display: none; }
+    .carga__escena { width: min(240px, 60vw); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .cg-suelo, .cg-viento path, .cg-jugador, .cg-sombra, .cg-muslo, .cg-pierna,
+    .cg-brazo, .cg-balon-pos, .cg-balon-bota, .cg-balon, .carga__bola, .carga__relleno {
+        animation: none !important;
+    }
+    .carga { animation: none; transition-duration: .01ms; }
+}
