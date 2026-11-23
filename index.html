@@ -29,6 +29,7 @@
     <link rel="stylesheet" href="styles-admin.css">
     <link rel="stylesheet" href="styles-navidad.css">
     <link rel="stylesheet" href="styles-navidad-panel.css">
+    <link rel="stylesheet" href="styles-jugadores.css">
 </head>
 
 <body>
@@ -396,6 +397,7 @@
             <a href="#mapa" class="nav-link active" data-section="mapa">Mapa</a>
             <a href="#canchas" class="nav-link" data-section="canchas">Canchas</a>
             <a href="#eventos" class="nav-link" data-section="eventos">Eventos</a>
+            <a href="#jugadores" class="nav-link" data-section="jugadores">Jugadores</a>
             <a href="#mapa" class="nav-link" data-open="capas">Capas GIS</a>
             <a href="#app-footer" class="nav-link" data-section="app-footer">Proyecto</a>
             <span id="nav-sesion" class="nav-sesion" hidden></span>
@@ -635,6 +637,45 @@
 
             <div id="contenedor-lista-eventos-global" class="lista-canchas">
                 <p class="cargando-texto">Cargando eventos y torneos...</p>
+            </div>
+        </section>
+
+        <!-- ============ JUGADORES ============ -->
+        <section id="jugadores" class="section">
+            <div class="section__head">
+                <div>
+                    <h2>Jugadores</h2>
+                    <p>Crea tu carta, muestra tus mejores cualidades y deja que los equipos que necesitan jugadores te inviten. Valora y comenta a los demás.</p>
+                </div>
+                <span class="count-pill"><b id="contador-jugadores">0</b> cartas</span>
+            </div>
+
+            <div class="jug-toolbar">
+                <div class="searchbar" role="search">
+                    <svg class="icon searchbar__icon"><use href="#i-search" /></svg>
+                    <input type="search" id="buscador-jugadores" class="input-filtro"
+                        placeholder="Buscar jugador por nombre" aria-label="Buscar jugador" autocomplete="off">
+                </div>
+                <div id="jugadores-chips" class="jug-chips" role="group" aria-label="Filtrar por posición">
+                    <button type="button" class="is-on" data-pos="todas">Todas</button>
+                    <button type="button" data-pos="Delantero">Delanteros</button>
+                    <button type="button" data-pos="Mediocampista">Mediocampistas</button>
+                    <button type="button" data-pos="Defensor">Defensores</button>
+                    <button type="button" data-pos="Arquero">Arqueros</button>
+                </div>
+                <select id="select-orden-jugadores" class="select-nativo" aria-label="Ordenar jugadores">
+                    <option value="valoracion">Mejor valorados</option>
+                    <option value="media">Mayor media</option>
+                    <option value="recientes">Más recientes</option>
+                </select>
+                <button type="button" id="btn-agregar-jugador" class="btn btn--primary">
+                    <svg class="icon"><use href="#i-plus" /></svg>
+                    <span id="btn-agregar-jugador-texto">Agregarme</span>
+                </button>
+            </div>
+
+            <div id="contenedor-lista-jugadores" class="jug-grid">
+                <p class="cargando-texto">Cargando jugadores...</p>
             </div>
         </section>
     </main>
@@ -1146,6 +1187,102 @@
         </div>
     </div>
 
+        
+        <!-- ============ MODAL: CREAR / EDITAR MI CARTA ============ -->
+    <div id="modal-jugador-form" class="modal-overlay oculto">
+        <div class="modal-content modal-content--lg" role="dialog" aria-modal="true" aria-labelledby="jug-form-titulo">
+            <button type="button" id="jug-cerrar-form" class="modal-cerrar" aria-label="Cerrar">
+                <svg class="icon"><use href="#i-x" /></svg>
+            </button>
+            <h3 id="jug-form-titulo" class="modal-titulo">Crear mi carta</h3>
+            <p class="modal-subtexto">Solo puedes tener una carta por cuenta. Tu correo será visible para invitarte a jugar.</p>
+
+            <div class="jug-form-layout">
+                <div id="jug-preview" class="jug-preview"></div>
+
+                <form id="form-jugador" class="form-stack">
+                    <div class="grupo-campo">
+                        <label for="jug-nombre">Nombre en la carta</label>
+                        <input type="text" id="jug-nombre" class="input-reserva" maxlength="40" required placeholder="Ej: Juan Alzate">
+                    </div>
+                    <div class="grupo-campo">
+                        <label for="jug-posicion">Posición</label>
+                        <select id="jug-posicion" class="input-reserva">
+                            <option value="Delantero">Delantero (atacante)</option>
+                            <option value="Mediocampista">Mediocampista (volante)</option>
+                            <option value="Defensor">Defensor</option>
+                            <option value="Arquero">Arquero</option>
+                        </select>
+                    </div>
+                    <div class="jug-sliders">
+                        <label>Defensa <output id="out-defensa">60</output>
+                            <input type="range" id="jug-defensa" min="1" max="99" value="60"></label>
+                        <label>Velocidad <output id="out-velocidad">60</output>
+                            <input type="range" id="jug-velocidad" min="1" max="99" value="60"></label>
+                        <label>Tiro <output id="out-tiro">60</output>
+                            <input type="range" id="jug-tiro" min="1" max="99" value="60"></label>
+                        <label>Pase <output id="out-pase">60</output>
+                            <input type="range" id="jug-pase" min="1" max="99" value="60"></label>
+                        <label for="jug-regate">Regate <output id="out-regate">60</output></label>
+                            <input type="range" id="jug-regate" min="1" max="99" value="60">
+
+                        <label for="jug-fisico">Físico <output id="out-fisico">60</output></label>
+                            <input type="range" id="jug-fisico" min="1" max="99" value="60">
+                    </div>
+                    <label for="jug-foto">Foto de perfil (opcional)</label>
+                    <input type="file" id="jug-foto" accept="image/png,image/jpeg,image/webp">
+                    <div class="grupo-campo">
+                        <label for="jug-email">Correo (de tu cuenta)</label>
+                        <input type="email" id="jug-email" class="input-reserva" readonly>
+                    </div>
+                    <div class="grupo-campo">
+                        <label for="jug-descripcion">Frase o descripción (opcional)</label>
+                        <input type="text" id="jug-descripcion" class="input-reserva" maxlength="160"
+                            placeholder="Ej: Disponible los jueves y sábados en la noche">
+                    </div>
+                    <button type="submit" id="btn-guardar-jugador" class="btn btn--primary btn--block">
+                        <svg class="icon"><use href="#i-check" /></svg>
+                        <span id="btn-guardar-jugador-texto">Publicar mi carta</span>
+                    </button>
+                    <button type="button" id="btn-eliminar-jugador" class="btn btn--ghost btn--block oculto">Eliminar mi carta</button>
+                    <p id="mensaje-jugador" class="form-mensaje"></p>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============ MODAL: DETALLE, VALORACIÓN Y COMENTARIOS ============ -->
+    <div id="modal-jugador-detalle" class="modal-overlay oculto">
+        <div class="modal-content modal-content--lg" role="dialog" aria-modal="true">
+            <button type="button" id="jug-cerrar-detalle" class="modal-cerrar" aria-label="Cerrar">
+                <svg class="icon"><use href="#i-x" /></svg>
+            </button>
+            <div class="jug-form-layout">
+                <div>
+                    <div id="jug-detalle-carta" class="jug-preview"></div>
+                    <div id="jug-detalle-info" class="jug-info"></div>
+                </div>
+                <div>
+                    <h4 class="drawer__h">Valoraciones y comentarios</h4>
+                    <div id="jug-lista-valoraciones" class="scroll-box scroll-box--sm"></div>
+
+                    <p id="jug-aviso-valorar" class="modal-subtexto"></p>
+                    <form id="form-valorar-jugador" class="panel-form oculto">
+                        <div class="rating-input">
+                            <span class="rating-input__label">Tu valoración</span>
+                            <div id="jug-estrellas" class="jug-estrellas">
+                                <span data-value="1">★</span><span data-value="2">★</span><span data-value="3">★</span><span data-value="4">★</span><span data-value="5">★</span>
+                            </div>
+                        </div>
+                        <textarea id="jug-comentario" class="input-reserva" rows="2" maxlength="300"
+                            placeholder="¿Cómo juega? ¿Es puntual, buen compañero?"></textarea>
+                        <button type="submit" class="btn btn--primary btn--block">Enviar valoración</button>
+                        <p id="mensaje-valorar-jugador" class="form-mensaje"></p>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
     <!-- Scripts CDN -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>

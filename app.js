@@ -55,6 +55,7 @@ class MapViewer {
         this._canchaAdminEditando = null;
         this._linkAtendido = false;
         this._modoSeleccionAdminActivo = false;
+        this._previewFotoBlobUrl = null;
 
         // Variables de estado para capas
         this.modoEnfoqueActivo = false;
@@ -66,6 +67,7 @@ class MapViewer {
         this.capaParaderos = null;
         this.capaBuffer = null;
         this.capaGdalGroup = null;
+        this.usuario = null;
         this.capaZonasInfluencia = null;
 
         this.favoritos = JSON.parse(localStorage.getItem('canchas_favoritas')) || [];
@@ -108,6 +110,7 @@ class MapViewer {
         this.initControlCapasUI();
         this.initPanelesFlotantes();
         this.initMenuMovil();
+        this.initJugadores();
         this.cargarCapaGdalProcesada();
         this.initCargaEfectivaPorViewport();
         this.activarModoSeleccionAdmin();
@@ -530,6 +533,8 @@ class MapViewer {
     }
 
     actualizarNavbarSesion(user) {
+        this.usuario = user || null;
+        if (this.jugadores) { this.actualizarBotonJugador(); this.renderizarJugadores(); }
         const contenedor = document.getElementById('nav-sesion');
         if (!contenedor) return;
 
@@ -3500,6 +3505,435 @@ class MapViewer {
         this.toast('✅ Evento eliminado.');
         await this.cargarEventosGlobales();
         await this.cargarDatosAdminEventos();
+    }
+
+    // ------------------------------------------------------------------
+    // JUGADORES · cartas estilo FIFA
+    // ------------------------------------------------------------------
+    initJugadores() {
+        const $ = (id) => document.getElementById(id);
+        this.jugadores = [];
+        this.jugadorDetalleId = null;
+        this._puntuacionJug = 5;
+        this.filtroJugadores = { texto: '', pos: 'todas', orden: 'valoracion' };
+
+        $('btn-agregar-jugador')?.addEventListener('click', () => this.abrirFormJugador());
+        $('buscador-jugadores')?.addEventListener('input', (e) => {
+            this.filtroJugadores.texto = e.target.value.trim().toLowerCase();
+            this.renderizarJugadores();
+        });
+        $('select-orden-jugadores')?.addEventListener('change', (e) => {
+            this.filtroJugadores.orden = e.target.value;
+            this.renderizarJugadores();
+        });
+        document.querySelectorAll('#jugadores-chips [data-pos]').forEach(b => b.addEventListener('click', () => {
+            this.filtroJugadores.pos = b.dataset.pos;
+            document.querySelectorAll('#jugadores-chips [data-pos]').forEach(x => x.classList.toggle('is-on', x === b));
+            this.renderizarJugadores();
+        }));
+
+        // Formulario de carta
+        const cerrarForm = () => $('modal-jugador-form')?.classList.add('oculto');
+        $('jug-cerrar-form')?.addEventListener('click', cerrarForm);
+        $('modal-jugador-form')?.addEventListener('click', (e) => { if (e.target.id === 'modal-jugador-form') cerrarForm(); });
+        $('form-jugador')?.addEventListener('input', () => this.actualizarPreviewJugador());
+        $('form-jugador')?.addEventListener('change', () => this.actualizarPreviewJugador());
+        $('form-jugador')?.addEventListener('submit', async (e) => { e.preventDefault(); await this.guardarJugador(); });
+        $('btn-eliminar-jugador')?.addEventListener('click', () => this.eliminarMiJugador());
+
+        // Detalle y valoración
+        const cerrarDet = () => $('modal-jugador-detalle')?.classList.add('oculto');
+        $('jug-cerrar-detalle')?.addEventListener('click', cerrarDet);
+        $('modal-jugador-detalle')?.addEventListener('click', (e) => { if (e.target.id === 'modal-jugador-detalle') cerrarDet(); });
+        $('jug-estrellas')?.addEventListener('click', (e) => {
+            const s = e.target.closest('[data-value]');
+            if (s) this.pintarEstrellasJugador(parseInt(s.dataset.value));
+        });
+        $('form-valorar-jugador')?.addEventListener('submit', async (e) => { e.preventDefault(); await this.guardarValoracionJugador(); });
+
+        this.cargarJugadores();
+    }
+
+    miCartaJugador() {
+        return this.usuario ? (this.jugadores || []).find(j => j.user_id === this.usuario.id) : null;
+    }
+
+    actualizarBotonJugador() {
+        const t = document.getElementById('btn-agregar-jugador-texto');
+        if (t) t.textContent = this.miCartaJugador() ? 'Editar mi carta' : 'Agregarme';
+    }
+
+    async cargarJugadores() {
+        const { data, error } = await this.supabase.from('jugadores_resumen').select('*');
+        const cont = document.getElementById('contenedor-lista-jugadores');
+        if (error) {
+            console.error(error);
+            if (cont) cont.innerHTML = '<p class="cargando-texto" style="color:#ef4444;">No se pudieron cargar los jugadores.</p>';
+            return;
+        }
+        this.jugadores = (data || []).map(j => ({ ...j, promedio: Number(j.promedio) || 0, num_valoraciones: Number(j.num_valoraciones) || 0 }));
+        const c = document.getElementById('contador-jugadores');
+        if (c) c.textContent = this.jugadores.length;
+        this.actualizarBotonJugador();
+        this.renderizarJugadores();
+    }
+
+    
+    // Media general de la carta según la posición (con las 6 cualidades)
+    calcularMediaJugador(j) {
+        const pesos = {
+            Delantero:     { tiro: .28, velocidad: .24, regate: .22, pase: .14, fisico: .08, defensa: .04 },
+            Mediocampista: { pase: .28, regate: .24, velocidad: .14, tiro: .14, defensa: .10, fisico: .10 },
+            Defensor:      { defensa: .36, fisico: .24, pase: .16, velocidad: .14, regate: .06, tiro: .04 },
+            Arquero:       { defensa: .42, fisico: .24, pase: .18, velocidad: .10, regate: .04, tiro: .02 }
+        }[j.posicion] || { velocidad: .17, tiro: .17, pase: .17, regate: .17, defensa: .16, fisico: .16 };
+
+        return Math.round(
+            Object.entries(pesos).reduce((s, [k, p]) => s + (Number(j[k]) || 60) * p, 0)
+        );
+    }
+
+    abreviaturaPosicion(p) {
+        return {
+            Delantero: 'DEL',
+            Mediocampista: 'MED',
+            Defensor: 'DEF',
+            Arquero: 'ARQ'
+        }[p] || 'JUG';
+    }
+
+    estrellasTexto(prom) {
+        const r = Math.round(prom);
+        return '★'.repeat(r) + '☆'.repeat(5 - r);
+    }
+
+    cartaJugadorHtml(j) {
+        const media = this.calcularMediaJugador(j);
+        const nivel = media >= 75 ? 'oro' : media >= 60 ? 'plata' : 'bronce';
+        const inicial = this.escaparHtml((j.nombre || '?').trim().charAt(0).toUpperCase());
+        const fallbackHtml = `<span class="fut-card__inicial">${inicial}</span>`;
+        const avatarContenido = j.foto_url
+            ? `<img src="${this.escaparHtml(j.foto_url)}" alt="Foto de ${this.escaparHtml(j.nombre || 'Jugador')}" loading="lazy" onerror="this.outerHTML='<span class=&quot;fut-card__inicial&quot;>${inicial}</span>'">`
+            : fallbackHtml;
+
+        const val = j.num_valoraciones > 0
+            ? `<span class="fut-card__val"><b>${Number(j.promedio).toFixed(1)}</b> ${this.estrellasTexto(j.promedio)} <small>(${j.num_valoraciones})</small></span>`
+            : '<span class="fut-card__val fut-card__val--vacia">Sin valoraciones</span>';
+
+        return `
+            <div class="fut-card fut-card--${nivel}">
+                <div class="fut-card__top">
+                    <div class="fut-card__media"><b>${media}</b><span>${this.abreviaturaPosicion(j.posicion)}</span></div>
+                    <div class="fut-card__avatar" aria-hidden="true">${avatarContenido}</div>
+                </div>
+                <h3 class="fut-card__nombre">${this.escaparHtml(j.nombre || 'Jugador')}</h3>
+                <p class="fut-card__email">${this.escaparHtml(j.email || '')}</p>
+                <div class="fut-card__stats fut-card__stats--6">
+                    <div><b>${Number(j.velocidad) || 60}</b><span>VEL</span></div>
+                    <div><b>${Number(j.tiro) || 60}</b><span>TIR</span></div>
+                    <div><b>${Number(j.pase) || 60}</b><span>PAS</span></div>
+                    <div><b>${Number(j.regate) || 60}</b><span>REG</span></div>
+                    <div><b>${Number(j.defensa) || 60}</b><span>DEF</span></div>
+                    <div><b>${Number(j.fisico) || 60}</b><span>FIS</span></div>
+                </div>
+                ${val}
+            </div>`;
+    }
+
+    renderizarJugadores() {
+        const cont = document.getElementById('contenedor-lista-jugadores');
+        if (!cont) return;
+        const f = this.filtroJugadores;
+        let lista = (this.jugadores || []).filter(j =>
+            (f.pos === 'todas' || j.posicion === f.pos) &&
+            (!f.texto || (j.nombre || '').toLowerCase().includes(f.texto)));
+
+        if (f.orden === 'valoracion') {
+            lista.sort((a, b) => (b.promedio - a.promedio) || (b.num_valoraciones - a.num_valoraciones) || (this.calcularMediaJugador(b) - this.calcularMediaJugador(a)));
+        } else if (f.orden === 'media') {
+            lista.sort((a, b) => this.calcularMediaJugador(b) - this.calcularMediaJugador(a));
+        } else {
+            lista.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+        }
+
+        if (lista.length === 0) {
+            cont.innerHTML = '<p class="cargando-texto">Aún no hay jugadores con ese filtro. ¡Sé el primero en agregarte!</p>';
+            return;
+        }
+
+        cont.innerHTML = '';
+        lista.forEach(j => {
+            const esMia = this.usuario && j.user_id === this.usuario.id;
+            const item = document.createElement('div');
+            item.className = 'jug-item' + (esMia ? ' is-mia' : '');
+            item.tabIndex = 0;
+            item.innerHTML = this.cartaJugadorHtml(j) + (esMia ? '<span class="jug-item__mia">Tu carta</span>' : '');
+            item.addEventListener('click', () => this.abrirDetalleJugador(j.id));
+            item.addEventListener('keydown', (e) => { if (e.key === 'Enter') this.abrirDetalleJugador(j.id); });
+            cont.appendChild(item);
+        });
+    }
+
+    // ---- Crear / editar mi carta ----
+    pedirSesionJugador() {
+        this.toast('⚠️ Inicia sesión para crear tu carta de jugador.');
+        document.getElementById('modal-auth')?.classList.remove('oculto');
+    }
+
+    abrirFormJugador() {
+        if (!this.usuario) { this.pedirSesionJugador(); return; }
+        const $ = (id) => document.getElementById(id);
+        const mi = this.miCartaJugador();
+        const meta = this.usuario.user_metadata || {};
+        const nombreBase = [meta.nombre, meta.apellidos].filter(Boolean).join(' ');
+
+        $('jug-form-titulo').textContent = mi ? 'Editar mi carta' : 'Crear mi carta';
+        $('btn-guardar-jugador-texto').textContent = mi ? 'Guardar cambios' : 'Publicar mi carta';
+        $('btn-eliminar-jugador').classList.toggle('oculto', !mi);
+        $('mensaje-jugador').textContent = '';
+
+        $('jug-nombre').value = mi?.nombre || nombreBase || '';
+        $('jug-posicion').value = mi?.posicion || 'Delantero';
+        ['defensa', 'velocidad', 'tiro', 'pase', 'regate', 'fisico'].forEach(k => { $('jug-' + k).value = mi ? mi[k] : 60; });
+        $('jug-email').value = this.usuario.email || '';
+        $('jug-descripcion').value = mi?.descripcion || '';
+
+        const inputFoto = $('jug-foto');
+        if (inputFoto) inputFoto.value = '';
+
+        this.actualizarPreviewJugador();
+        $('modal-jugador-form').classList.remove('oculto');
+    }
+
+    leerFormJugador() {
+        const $ = (id) => document.getElementById(id);
+        const n = (id) => Math.min(99, Math.max(1, parseInt($(id).value) || 1));
+        return {
+            nombre: $('jug-nombre').value.trim(),
+            posicion: $('jug-posicion').value,
+            defensa: n('jug-defensa'), velocidad: n('jug-velocidad'), tiro: n('jug-tiro'), pase: n('jug-pase'), regate: n('jug-regate'), fisico: n('jug-fisico'),
+            descripcion: $('jug-descripcion').value.trim()
+        };
+    }
+
+    actualizarPreviewJugador() {
+        const d = this.leerFormJugador();
+        ['defensa', 'velocidad', 'tiro', 'pase', 'regate', 'fisico'].forEach(k => {
+            const o = document.getElementById('out-' + k);
+            if (o) o.textContent = d[k];
+        });
+
+        const archivoFoto = document.getElementById('jug-foto')?.files?.[0];
+        const mi = this.miCartaJugador();
+        let fotoPreview = mi?.foto_url || null;
+
+        if (this._previewFotoBlobUrl) {
+            URL.revokeObjectURL(this._previewFotoBlobUrl);
+            this._previewFotoBlobUrl = null;
+        }
+        if (archivoFoto) {
+            this._previewFotoBlobUrl = URL.createObjectURL(archivoFoto);
+            fotoPreview = this._previewFotoBlobUrl;
+        }
+
+        const prev = document.getElementById('jug-preview');
+        if (prev) {
+            prev.innerHTML = this.cartaJugadorHtml({
+                ...d,
+                nombre: d.nombre || 'Tu nombre',
+                email: this.usuario?.email || '',
+                foto_url: fotoPreview,
+                promedio: mi?.promedio || 0,
+                num_valoraciones: mi?.num_valoraciones || 0
+            });
+        }
+    }
+
+    async guardarJugador() {
+        if (!this.usuario) { this.pedirSesionJugador(); return; }
+        const msg = document.getElementById('mensaje-jugador');
+        const boton = document.getElementById('btn-guardar-jugador');
+        const d = this.leerFormJugador();
+        if (d.nombre.length < 2) {
+            msg.textContent = '❌ Escribe tu nombre (mínimo 2 letras).';
+            msg.style.color = '#b3382d';
+            return;
+        }
+
+        boton.disabled = true;
+        msg.textContent = 'Guardando...';
+        msg.style.color = '#1c6ea4';
+
+        const mi = this.miCartaJugador();
+        let fotoUrl = mi?.foto_url || null;
+        const archivoFoto = document.getElementById('jug-foto')?.files?.[0];
+
+        if (archivoFoto) {
+            const ext = (archivoFoto.name.split('.').pop() || 'jpg')
+                .toLowerCase()
+                .replace(/[^a-z0-9]/g, '') || 'jpg';
+            const ruta = `jugadores_fotos/${this.usuario.id}_${Date.now()}.${ext}`;
+
+            const { error: errSubida } = await this.supabase.storage
+                .from('evidencias')
+                .upload(ruta, archivoFoto, {
+                    contentType: archivoFoto.type || 'image/jpeg',
+                    upsert: false
+                });
+
+            if (errSubida) {
+                console.error(errSubida);
+                boton.disabled = false;
+                msg.textContent = '❌ No se pudo subir la foto de perfil.';
+                msg.style.color = '#b3382d';
+                return;
+            }
+
+            fotoUrl = this.supabase.storage.from('evidencias').getPublicUrl(ruta).data.publicUrl;
+        }
+
+        const payload = {
+            ...d,
+            descripcion: d.descripcion || null,
+            foto_url: fotoUrl,
+            email: this.usuario.email
+        };
+
+        let res;
+        if (mi) {
+            res = await this.supabase.from('jugadores').update(payload).eq('id', mi.id).select();
+        } else {
+            res = await this.supabase.from('jugadores').insert([{ ...payload, user_id: this.usuario.id }]).select();
+        }
+        boton.disabled = false;
+
+        if (res.error || !res.data || res.data.length === 0) {
+            console.error(res.error);
+            msg.textContent = res.error?.code === '23505'
+                ? '⚠️ Ya tienes una carta creada con esta cuenta.'
+                : '❌ No se pudo guardar la carta.';
+            msg.style.color = '#b3382d';
+            return;
+        }
+
+        const inputFoto = document.getElementById('jug-foto');
+        if (inputFoto) inputFoto.value = '';
+        if (this._previewFotoBlobUrl) {
+            URL.revokeObjectURL(this._previewFotoBlobUrl);
+            this._previewFotoBlobUrl = null;
+        }
+        msg.textContent = '';
+        document.getElementById('modal-jugador-form').classList.add('oculto');
+        this.toast(mi ? '✅ Carta actualizada.' : '✅ ¡Tu carta ya está publicada!');
+        await this.cargarJugadores();
+    }
+
+    async eliminarMiJugador() {
+        const mi = this.miCartaJugador();
+        if (!mi) return;
+        const ok = await this.confirmar('¿Eliminar tu carta?', 'Se borrarán también tus valoraciones y comentarios recibidos.', 'Sí, eliminar');
+        if (!ok) return;
+        const { data, error } = await this.supabase.from('jugadores').delete().eq('id', mi.id).select();
+        if (error || !data || data.length === 0) { this.toast('❌ No se pudo eliminar la carta.'); return; }
+        document.getElementById('modal-jugador-form').classList.add('oculto');
+        this.toast('✅ Carta eliminada.');
+        await this.cargarJugadores();
+    }
+
+    // ---- Detalle, valoración y comentarios ----
+    pintarEstrellasJugador(valor) {
+        this._puntuacionJug = valor;
+        document.querySelectorAll('#jug-estrellas [data-value]').forEach(s => {
+            s.classList.toggle('on', parseInt(s.dataset.value) <= valor);
+        });
+    }
+
+    async abrirDetalleJugador(id) {
+        const j = (this.jugadores || []).find(x => x.id == id);
+        if (!j) return;
+        const $ = (i) => document.getElementById(i);
+        this.jugadorDetalleId = j.id;
+
+        $('jug-detalle-carta').innerHTML = this.cartaJugadorHtml(j);
+        const asunto = encodeURIComponent('Invitación a jugar fútbol · Sabaneta en la jugada');
+        const cuerpo = encodeURIComponent(`Hola ${j.nombre}, te vi en Sabaneta en la jugada y quiero invitarte a jugar.`);
+        $('jug-detalle-info').innerHTML = `
+            ${j.descripcion ? `<p class="jug-info__desc">“${this.escaparHtml(j.descripcion)}”</p>` : ''}
+            <a class="btn btn--primary btn--block" href="mailto:${this.escaparHtml(j.email)}?subject=${asunto}&body=${cuerpo}">
+                <svg class="icon"><use href="#i-users"/></svg>Invitar a jugar
+            </a>`;
+
+        const esMio = this.usuario && j.user_id === this.usuario.id;
+        $('form-valorar-jugador').classList.toggle('oculto', !this.usuario || esMio);
+        $('jug-aviso-valorar').textContent = !this.usuario
+            ? 'Inicia sesión para valorar y comentar a este jugador.'
+            : esMio ? 'Esta es tu carta: no puedes valorarte a ti mismo.' : '';
+        $('mensaje-valorar-jugador').textContent = '';
+        $('jug-comentario').value = '';
+        this.pintarEstrellasJugador(5);
+
+        $('modal-jugador-detalle').classList.remove('oculto');
+        await this.cargarValoracionesJugador(j.id);
+    }
+
+    async cargarValoracionesJugador(jugadorId) {
+        const cont = document.getElementById('jug-lista-valoraciones');
+        cont.innerHTML = '<p class="modal-subtexto">Cargando opiniones...</p>';
+        const { data, error } = await this.supabase
+            .from('valoraciones_jugador').select('*')
+            .eq('jugador_id', jugadorId).order('created_at', { ascending: false });
+
+        if (error || !data || data.length === 0) {
+            cont.innerHTML = '<p class="modal-subtexto">Todavía no hay valoraciones. ¡Sé el primero!</p>';
+            return;
+        }
+
+        // Si ya valoré a este jugador, precargo mi valoración para poder editarla
+        const mia = this.usuario ? data.find(v => v.user_id === this.usuario.id) : null;
+        if (mia) {
+            this.pintarEstrellasJugador(mia.puntuacion);
+            document.getElementById('jug-comentario').value = mia.comentario || '';
+        }
+
+        cont.innerHTML = '';
+        data.forEach(v => {
+            const div = document.createElement('div');
+            div.className = 'row-card row-card--block';
+            div.innerHTML = `
+                <div style="display:flex;justify-content:space-between;gap:8px;margin-bottom:2px;">
+                    <strong>${this.escaparHtml(v.autor)}</strong>
+                    <span style="color:#6a776f;font-size:.75rem;">${new Date(v.created_at).toLocaleDateString('es-CO')}</span>
+                </div>
+                <div style="color:#c89208;font-size:.85rem;">${this.estrellasTexto(v.puntuacion)}</div>
+                <p style="margin:2px 0 0;">${v.comentario ? this.escaparHtml(v.comentario) : '<em>Sin comentario</em>'}</p>`;
+            cont.appendChild(div);
+        });
+    }
+
+    async guardarValoracionJugador() {
+        if (!this.usuario || !this.jugadorDetalleId) return;
+        const msg = document.getElementById('mensaje-valorar-jugador');
+        const meta = this.usuario.user_metadata || {};
+        const autor = [meta.nombre, meta.apellidos].filter(Boolean).join(' ') || (this.usuario.email || 'Usuario').split('@')[0];
+
+        msg.textContent = 'Guardando...'; msg.style.color = '#1c6ea4';
+        const { error } = await this.supabase.from('valoraciones_jugador').upsert([{
+            jugador_id: this.jugadorDetalleId,
+            user_id: this.usuario.id,
+            autor,
+            puntuacion: this._puntuacionJug,
+            comentario: document.getElementById('jug-comentario').value.trim() || null
+        }], { onConflict: 'jugador_id,user_id' });
+
+        if (error) {
+            console.error(error);
+            msg.textContent = '❌ No se pudo guardar la valoración.';
+            msg.style.color = '#b3382d';
+            return;
+        }
+        this.toast('✅ ¡Valoración enviada!');
+        await this.cargarJugadores();                       // actualiza promedios en las cartas
+        await this.abrirDetalleJugador(this.jugadorDetalleId); // refresca el detalle
     }
 
     async cargarDatosAdminUsuarios() {

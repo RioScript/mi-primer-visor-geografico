@@ -1,0 +1,168 @@
+/* ===== Barra de herramientas ===== */
+.jug-toolbar { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-bottom: 26px; }
+.jug-toolbar .searchbar { flex: 1 1 240px; max-width: 360px; }
+.jug-toolbar .select-nativo { width: auto; min-width: 170px; }
+.jug-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.jug-chips button {
+    padding: 9px 14px; border: 1px solid var(--m-rule); border-radius: 999px; background: #fff;
+    color: var(--m-ink-2); font-weight: 600; font-size: .9rem;
+}
+.jug-chips button.is-on { background: var(--m-asfalto); color: #fff; border-color: var(--m-asfalto); }
+
+/* ===== Cuadrícula ===== */
+.jug-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 26px 20px; justify-items: center; }
+.jug-item { position: relative; width: 100%; max-width: 250px; cursor: pointer; transition: transform .25s ease, filter .25s ease; }
+.jug-item:hover, .jug-item:focus-visible { transform: translateY(-6px) scale(1.02); filter: drop-shadow(0 14px 18px rgba(21, 28, 25, .3)); outline: none; }
+.jug-item__mia {
+    position: absolute; top: -8px; right: -4px; padding: 3px 10px; border-radius: 999px;
+    background: var(--m-linea); color: var(--m-asfalto); font-family: var(--m-head); font-weight: 700;
+    font-size: .9rem; letter-spacing: .05em; text-transform: uppercase; z-index: 2;
+}
+
+/* ===== Carta estilo FIFA ===== */
+.fut-card {
+    --c1: #f6e27a; --c2: #d9a62b; --c3: #8a5f0a; --tx: #3a2704;
+    position: relative; width: 100%; aspect-ratio: 5 / 7; padding: 16px 18px 14px;
+    display: flex; flex-direction: column; color: var(--tx);
+    background: linear-gradient(155deg, var(--c1), var(--c2) 55%, var(--c3));
+    clip-path: polygon(0 7%, 50% 0, 100% 7%, 100% 100%, 0 100%);
+    border-radius: 10px;
+}
+.fut-card::before {          /* brillo y marco interior */
+    content: ""; position: absolute; inset: 6px; pointer-events: none;
+    clip-path: polygon(0 7%, 50% 1.5%, 100% 7%, 100% 100%, 0 100%);
+    background: linear-gradient(120deg, rgba(255, 255, 255, .35), transparent 40%, rgba(255, 255, 255, .15));
+    border: 1px solid rgba(255, 255, 255, .45);
+}
+.fut-card--plata  { --c1: #f1f4f6; --c2: #b7c0c7; --c3: #6d7881; --tx: #1f2a31; }
+.fut-card--bronce { --c1: #e9bf96; --c2: #b97b45; --c3: #6b3f1b; --tx: #2e1807; }
+
+.fut-card__top { display: flex; align-items: flex-end; justify-content: space-between; margin-top: 10%; }
+.fut-card__media { display: flex; flex-direction: column; line-height: 1; font-family: var(--m-head); }
+.fut-card__media b { font-size: 3rem; font-weight: 700; }
+.fut-card__media span { font-size: 1.2rem; font-weight: 600; letter-spacing: .08em; }
+.fut-card__avatar {
+    width: 84px; height: 84px; display: grid; place-items: center; border-radius: 50%;
+    background: rgba(255, 255, 255, .35); border: 2px solid rgba(255, 255, 255, .6);
+    font-family: var(--m-head); font-size: 2.8rem; font-weight: 700;
+}
+.fut-card__nombre {
+    margin: 10px 0 6px; padding-bottom: 6px; text-align: center; text-transform: uppercase;
+    font-family: var(--m-head); font-size: 1.45rem; font-weight: 700; letter-spacing: .04em; line-height: 1.1;
+    border-bottom: 1px solid rgba(0, 0, 0, .25); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.fut-card__stats { display: grid; grid-template-columns: repeat(4, 1fr); text-align: center; font-family: var(--m-head); }
+.fut-card__stats b { display: block; font-size: 1.6rem; font-weight: 700; line-height: 1.1; }
+.fut-card__stats span { font-size: .85rem; font-weight: 600; letter-spacing: .08em; opacity: .85; }
+.fut-card__email {
+    margin: 8px 0 0; text-align: center; font-size: .68rem; font-weight: 600;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; opacity: .85;
+}
+.fut-card__val { margin-top: auto; padding-top: 6px; text-align: center; font-size: .85rem; letter-spacing: .03em; }
+.fut-card__val b { font-family: var(--m-head); font-size: 1.15rem; }
+.fut-card__val small { opacity: .75; }
+.fut-card__val--vacia { font-size: .75rem; opacity: .7; }
+
+/* ===== Modales de jugadores ===== */
+.jug-form-layout { display: grid; grid-template-columns: 250px 1fr; gap: 26px; margin-top: 18px; align-items: start; }
+.jug-preview { width: 250px; max-width: 100%; margin: 0 auto; }
+.jug-sliders { display: grid; gap: 10px; margin: 12px 0; }
+.jug-sliders label { display: grid; grid-template-columns: 1fr auto; gap: 2px 8px; font-size: .86rem; font-weight: 600; color: var(--m-ink-2); }
+.jug-sliders input[type="range"] { grid-column: 1 / -1; width: 100%; accent-color: var(--m-grama); }
+.jug-sliders output { font-family: var(--m-head); font-size: 1.15rem; color: var(--m-ink); }
+.jug-info { margin-top: 14px; }
+.jug-info__desc { margin-bottom: 12px; font-style: italic; color: var(--m-ink-2); }
+.jug-estrellas { display: flex; gap: 2px; font-size: 1.7rem; line-height: 1; cursor: pointer; user-select: none; }
+.jug-estrellas span { color: #cdd3ce; transition: transform .12s, color .12s; }
+.jug-estrellas span.on { color: #c89208; }
+.jug-estrellas span:hover { transform: scale(1.15); }
+#btn-eliminar-jugador { margin-top: 8px; }
+
+@media (max-width: 720px) {
+    .jug-form-layout { grid-template-columns: 1fr; }
+    .jug-toolbar .searchbar { max-width: none; }
+    .jug-toolbar .btn { width: 100%; }
+    .jug-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px 12px; }
+    .fut-card__media b { font-size: 2.3rem; }
+    .fut-card__avatar { width: 62px; height: 62px; font-size: 2rem; }
+    .fut-card__nombre { font-size: 1.15rem; }
+}
+@media (max-width: 420px) { .jug-grid { grid-template-columns: minmax(0, 250px); } }
+@media (prefers-reduced-motion: reduce) { .jug-item { transition: none; } }
+
+.fut-card__avatar {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.fut-card__avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center top;
+    display: block;
+}
+.fut-card {
+    display: flex;
+    flex-direction: column;
+}
+
+.fut-card__cabecera {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 112px;
+    padding-top: 8px;
+}
+
+.fut-card__media {
+    position: absolute;
+    left: 14px;
+    top: 12px;
+}
+
+.fut-card__avatar {
+    width: 96px;
+    height: 96px;
+    border-radius: 50%;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto;
+}
+
+.fut-card__avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center top;
+    display: block;
+}
+
+.fut-card__stats {
+    margin-top: auto;
+    padding-top: 10px;
+}
+
+.fut-card__stats--6 {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 4px;
+    text-align: center;
+}
+
+.fut-card__stats--6 b {
+    font-size: 0.95rem;
+}
+
+.fut-card__stats--6 span {
+    font-size: 0.62rem;
+}
