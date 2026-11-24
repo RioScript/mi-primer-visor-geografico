@@ -229,3 +229,29 @@
     .jug-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px 8px; }
     .jug-grid .fut-card__nombre { font-size: .58rem; }
 }
+
+.chat { display: flex; flex-direction: column; }
+.chat__vista { display: flex; flex-direction: column; height: 100%; padding: 22px 20px 16px; min-height: 0; }
+.chat__titulo { font-size: 1.2rem; font-weight: 800; margin-bottom: 12px; }
+.chat__cab { display: flex; flex-direction: column; gap: 4px; margin-bottom: 8px; }
+.chat__lista { overflow-y: auto; display: grid; gap: 8px; align-content: start; }
+.chat__fila { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border: 1px solid var(--line);
+  border-radius: 10px; background: #fff; text-align: left; }
+.chat__fila:hover { background: var(--brand-soft); }
+.chat__fila-txt { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.chat__fila-txt small { color: var(--ink-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.chat__avatar { width: 38px; height: 38px; display: grid; place-items: center; border-radius: 50%;
+  background: var(--brand); color: #fff; font-weight: 700; }
+
+.chat__mensajes { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; padding: 10px 2px; min-height: 0; }
+.chat__msg { max-width: 82%; padding: 8px 12px; border-radius: 14px; font-size: .9rem; word-break: break-word; }
+.chat__msg time { display: block; margin-top: 2px; font-size: .68rem; opacity: .65; text-align: right; }
+.chat__msg--mio { align-self: flex-end; background: var(--brand); color: #fff; border-bottom-right-radius: 4px; }
+.chat__msg--otro { align-self: flex-start; background: var(--line-2); border-bottom-left-radius: 4px; }
+.chat__invitacion { display: grid; gap: 4px; }
+
+.chat__invitar { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 10px 0; border-top: 1px solid var(--line-2); }
+.chat__invitar .btn { grid-column: 1 / -1; }
+.chat__form { display: flex; gap: 8px; }
+.chat__form .input-reserva { flex: 1; }
+@media (max-width: 720px) { .chat__form .input-reserva, .chat__invitar select, .chat__invitar input { font-size: 16px; } }

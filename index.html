@@ -400,7 +400,10 @@
             <a href="#jugadores" class="nav-link" data-section="jugadores">Jugadores</a>
             <a href="#mapa" class="nav-link" data-open="capas">Capas GIS</a>
             <a href="#app-footer" class="nav-link" data-section="app-footer">Proyecto</a>
-            <span id="nav-sesion" class="nav-sesion" hidden></span>
+            <span id="nav-sesion" class="nav-sesion" hidden></span> 
+            <button type="button" id="btn-mensajes" class="nav-link" hidden>
+                Mensajes <span id="badge-mensajes" class="badge oculto">0</span>
+            </button>
         </nav>
 
         <div class="header-actions">
@@ -1283,6 +1286,43 @@
                 </div>
             </div>
         </div>
+    </div>
+
+    <div id="modal-chat" class="modal-overlay modal-overlay--drawer oculto">
+        <aside class="modal-content drawer chat" role="dialog" aria-modal="true" aria-labelledby="chat-titulo">
+            <button type="button" id="chat-cerrar" class="modal-cerrar modal-cerrar--float" aria-label="Cerrar">
+                <svg class="icon"><use href="#i-x" /></svg>
+            </button>
+
+            <!-- Vista: bandeja -->
+            <div id="chat-vista-bandeja" class="chat__vista">
+                <h3 class="chat__titulo">Mensajes</h3>
+                <div id="chat-lista" class="chat__lista"></div>
+            </div>
+
+            <!-- Vista: conversación -->
+            <div id="chat-vista-conv" class="chat__vista oculto">
+                <div class="chat__cab">
+                    <button type="button" id="chat-volver" class="link-btn">← Mensajes</button>
+                    <h3 id="chat-titulo" class="chat__titulo">Chat</h3>
+                </div>
+                <div id="chat-mensajes" class="chat__mensajes" aria-live="polite"></div>
+
+                <div class="chat__invitar">
+                    <select id="chat-cancha" class="select-nativo"></select>
+                    <input type="datetime-local" id="chat-fecha" class="input-reserva">
+                    <button type="button" id="chat-invitar-btn" class="btn btn--secondary btn--sm">
+                        <svg class="icon"><use href="#i-trophy" /></svg>Enviar invitación
+                    </button>
+                </div>
+
+                <form id="chat-form" class="chat__form">
+                    <input type="text" id="chat-texto" class="input-reserva" maxlength="1000"
+                        placeholder="Escribe un mensaje..." autocomplete="off" required>
+                    <button type="submit" class="btn btn--primary">Enviar</button>
+                </form>
+            </div>
+        </aside>
     </div>
 
     <!-- Scripts CDN -->

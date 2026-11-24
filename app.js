@@ -39,6 +39,11 @@ class MapViewer {
         // Crear versión 'debounced' para la función de filtrado (Escudo anti-colapso)
         this.aplicarFiltrosGlobalesDebounced = this.debounce(() => this.aplicarFiltrosGlobales(), 180);
 
+        // Estado de la mensajería (se declara antes de initIntro porque la sesión puede resolverse enseguida)
+        this.chat = { convId: null, otroId: null, ids: new Set() };
+        this._canalMsgs = null;
+        this._canalMsgsUser = null;
+
         this.initIntro();
         // La decoración navideña va aparte y protegida: si otro módulo falla, igual se muestra (también a invitados)
         try { this.initNavidad(); } catch (e) { console.warn('Decoración navideña no disponible:', e); }
@@ -111,6 +116,7 @@ class MapViewer {
         this.initPanelesFlotantes();
         this.initMenuMovil();
         this.initJugadores();
+        this.initMensajeria();
         this.cargarCapaGdalProcesada();
         this.initCargaEfectivaPorViewport();
         this.activarModoSeleccionAdmin();
@@ -534,6 +540,12 @@ class MapViewer {
 
     actualizarNavbarSesion(user) {
         this.usuario = user || null;
+
+        // Mensajería: botón del menú y suscripción en tiempo real según la sesión
+        const btnMsg = document.getElementById('btn-mensajes');
+        if (btnMsg) btnMsg.hidden = !user;
+        if (user) this.iniciarMensajeria(); else this.detenerMensajeria();
+
         if (this.jugadores) { this.actualizarBotonJugador(); this.renderizarJugadores(); }
         const contenedor = document.getElementById('nav-sesion');
         if (!contenedor) return;
@@ -3897,17 +3909,20 @@ class MapViewer {
         if (!j) return;
         const $ = (i) => document.getElementById(i);
         this.jugadorDetalleId = j.id;
+        const esMio = this.usuario && j.user_id === this.usuario.id;
 
         $('jug-detalle-carta').innerHTML = this.cartaJugadorHtml(j);
-        const asunto = encodeURIComponent('Invitación a jugar fútbol · Sabaneta en la jugada');
-        const cuerpo = encodeURIComponent(`Hola ${j.nombre}, te vi en Sabaneta en la jugada y quiero invitarte a jugar.`);
         $('jug-detalle-info').innerHTML = `
             ${j.descripcion ? `<p class="jug-info__desc">“${this.escaparHtml(j.descripcion)}”</p>` : ''}
-            <a class="btn btn--primary btn--block" href="mailto:${this.escaparHtml(j.email)}?subject=${asunto}&body=${cuerpo}">
-                <svg class="icon"><use href="#i-users"/></svg>Invitar a jugar
-            </a>`;
+            ${esMio ? '' : `<button type="button" id="btn-invitar-chat" class="btn btn--primary btn--block">
+                <svg class="icon"><use href="#i-users"/></svg>Invitar a jugar</button>`}`;
 
-        const esMio = this.usuario && j.user_id === this.usuario.id;
+        // El botón abre el chat interno (antes abría el correo)
+        $('btn-invitar-chat')?.addEventListener('click', () => {
+            $('modal-jugador-detalle').classList.add('oculto');
+            this.abrirChat(j.user_id, j.nombre);
+        });
+
         $('form-valorar-jugador').classList.toggle('oculto', !this.usuario || esMio);
         $('jug-aviso-valorar').textContent = !this.usuario
             ? 'Inicia sesión para valorar y comentar a este jugador.'
@@ -4024,7 +4039,198 @@ class MapViewer {
         this.toast(`✅ Rol actualizado a ${nuevoRol.toUpperCase()} con éxito.`);
         await this.cargarDatosAdminUsuarios();
     }
-}
+
+    // ------------------------------------------------------------------
+    // MENSAJERÍA EN TIEMPO REAL (Supabase Realtime)
+    // ------------------------------------------------------------------
+    initMensajeria() {
+        const $ = (id) => document.getElementById(id);
+
+        $('btn-mensajes')?.addEventListener('click', () => this.abrirBandeja());
+        $('chat-cerrar')?.addEventListener('click', () => this.cerrarChat());
+        $('modal-chat')?.addEventListener('click', (e) => { if (e.target.id === 'modal-chat') this.cerrarChat(); });
+        $('chat-volver')?.addEventListener('click', () => this.abrirBandeja());
+        $('chat-form')?.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const input = $('chat-texto');
+            const texto = input.value.trim();
+            if (!texto) return;
+            input.value = '';
+            this.enviarMensaje(texto);
+        });
+        $('chat-invitar-btn')?.addEventListener('click', () => this.enviarInvitacion());
+        $('chat-mensajes')?.addEventListener('click', (e) => {
+            const b = e.target.closest('[data-cancha]');
+            if (!b) return;
+            this.cerrarChat();
+            this.enfocarCanchaPorId(b.dataset.cancha, true);
+        });
+    }
+
+    async iniciarMensajeria() {
+        if (!this.usuario) return;
+        // Si ya hay un canal para este mismo usuario no se duplica; si cambió de cuenta, se reinicia
+        if (this._canalMsgs && this._canalMsgsUser === this.usuario.id) return;
+        if (this._canalMsgs) this.detenerMensajeria();
+
+        this._canalMsgsUser = this.usuario.id;
+        // Un solo canal por sesión: RLS hace que solo lleguen MIS conversaciones
+        this._canalMsgs = this.supabase
+            .channel('mensajes-' + this.usuario.id)
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'mensajes' },
+                (payload) => this.alRecibirMensaje(payload.new))
+            .subscribe();
+        await this.actualizarNoLeidos();
+    }
+
+    detenerMensajeria() {
+        if (this._canalMsgs) { this.supabase.removeChannel(this._canalMsgs); this._canalMsgs = null; }
+        this._canalMsgsUser = null;
+        if (this.chat) this.chat.convId = null;
+        document.getElementById('modal-chat')?.classList.add('oculto');
+        const badge = document.getElementById('badge-mensajes');
+        if (badge) { badge.textContent = '0'; badge.classList.add('oculto'); }
+    }
+
+    async actualizarNoLeidos() {
+        if (!this.usuario) return;
+        const { data } = await this.supabase.from('mis_conversaciones').select('no_leidos');
+        const total = (data || []).reduce((s, c) => s + Number(c.no_leidos || 0), 0);
+        const badge = document.getElementById('badge-mensajes');
+        if (badge) { badge.textContent = total; badge.classList.toggle('oculto', total === 0); }
+    }
+
+    mostrarVistaChat(vista) {
+        document.getElementById('chat-vista-bandeja').classList.toggle('oculto', vista !== 'bandeja');
+        document.getElementById('chat-vista-conv').classList.toggle('oculto', vista !== 'conv');
+        document.getElementById('modal-chat').classList.remove('oculto');
+    }
+
+    cerrarChat() {
+        document.getElementById('modal-chat').classList.add('oculto');
+        this.chat.convId = null;
+    }
+
+    async abrirBandeja() {
+        if (!this.usuario) { this.pedirSesionJugador(); return; }
+        this.chat.convId = null;
+        this.mostrarVistaChat('bandeja');
+        const lista = document.getElementById('chat-lista');
+        lista.innerHTML = '<p class="modal-subtexto">Cargando...</p>';
+
+        const { data } = await this.supabase.from('mis_conversaciones').select('*')
+            .order('ultimo_mensaje_at', { ascending: false });
+        if (!data || data.length === 0) {
+            lista.innerHTML = '<p class="modal-subtexto">Aún no tienes conversaciones. Entra a una carta de jugador y pulsa "Invitar a jugar".</p>';
+            return;
+        }
+
+        const { data: js } = await this.supabase.from('jugadores_resumen')
+            .select('user_id, nombre').in('user_id', data.map(c => c.otro_id));
+        const nombres = new Map((js || []).map(j => [j.user_id, j.nombre]));
+
+        lista.innerHTML = '';
+        data.forEach(c => {
+            const nombre = nombres.get(c.otro_id) || 'Jugador';
+            const fila = document.createElement('button');
+            fila.type = 'button';
+            fila.className = 'chat__fila';
+            fila.innerHTML = `
+                <span class="chat__avatar">${this.escaparHtml(nombre.charAt(0).toUpperCase())}</span>
+                <span class="chat__fila-txt"><strong>${this.escaparHtml(nombre)}</strong>
+                    <small>${this.escaparHtml(c.ultimo || '')}</small></span>
+                ${Number(c.no_leidos) > 0 ? `<span class="badge">${Number(c.no_leidos)}</span>` : ''}`;
+            fila.addEventListener('click', () => this.abrirChat(c.otro_id, nombre));
+            lista.appendChild(fila);
+        });
+    }
+
+    async abrirChat(otroId, nombre = 'Jugador') {
+        if (!this.usuario) { this.pedirSesionJugador(); return; }
+        const { data: convId, error } = await this.supabase.rpc('obtener_o_crear_conversacion', { otro: otroId });
+        if (error) { console.error(error); this.toast('❌ No se pudo abrir el chat.'); return; }
+
+        Object.assign(this.chat, { convId, otroId, ids: new Set() });
+        document.getElementById('chat-titulo').textContent = nombre;
+        document.getElementById('chat-mensajes').innerHTML = '';
+
+        // Select de canchas para las invitaciones
+        const sel = document.getElementById('chat-cancha');
+        sel.innerHTML = '<option value="">Elige una cancha para invitar</option>' +
+            [...(this.datosCanchas || [])].sort((a, b) => (a.nombre || '').localeCompare(b.nombre || ''))
+                .map(c => `<option value="${c.id}">${this.escaparHtml(c.nombre || 'Cancha')}</option>`).join('');
+
+        this.mostrarVistaChat('conv');
+        const { data } = await this.supabase.from('mensajes').select('*')
+            .eq('conversacion_id', convId).order('created_at', { ascending: true });
+        (data || []).forEach(m => this.pintarMensaje(m));
+        await this.supabase.rpc('marcar_leidos', { conv: convId });
+        this.actualizarNoLeidos();
+    }
+
+    pintarMensaje(m) {
+        if (this.chat.ids.has(m.id)) return;          // evita duplicados (eco de Realtime)
+        this.chat.ids.add(m.id);
+        const cont = document.getElementById('chat-mensajes');
+        const mio = m.remitente_id === this.usuario.id;
+        const hora = new Date(m.created_at).toLocaleTimeString('es-CO', { hour: 'numeric', minute: '2-digit' });
+
+        let cuerpo = `<p>${this.escaparHtml(m.contenido)}</p>`;
+        if (m.tipo === 'invitacion' && m.metadata) {
+            const meta = m.metadata;
+            cuerpo = `
+                <div class="chat__invitacion">
+                    <b>⚽ Invitación a jugar</b>
+                    <span>${this.escaparHtml(meta.cancha_nombre || 'Cancha')}</span>
+                    ${meta.fecha ? `<span>📅 ${this.escaparHtml(this.formatearFechaEvento(meta.fecha))}</span>` : ''}
+                    <button type="button" class="btn btn--secondary btn--sm" data-cancha="${Number(meta.cancha_id)}">Ver cancha</button>
+                </div>`;
+        }
+
+        const div = document.createElement('div');
+        div.className = 'chat__msg ' + (mio ? 'chat__msg--mio' : 'chat__msg--otro');
+        div.innerHTML = `${cuerpo}<time>${hora}</time>`;
+        cont.appendChild(div);
+        cont.scrollTop = cont.scrollHeight;
+    }
+
+    async enviarMensaje(contenido, tipo = 'texto', metadata = null) {
+        if (!this.chat.convId) return;
+        const { data, error } = await this.supabase.from('mensajes').insert([{
+            conversacion_id: this.chat.convId,
+            remitente_id: this.usuario.id,
+            contenido, tipo, metadata
+        }]).select().single();
+        if (error) { console.error(error); this.toast('❌ No se pudo enviar el mensaje.'); return; }
+        this.pintarMensaje(data);
+    }
+
+    async enviarInvitacion() {
+        const canchaId = document.getElementById('chat-cancha').value;
+        const fecha = document.getElementById('chat-fecha').value || null;
+        if (!canchaId) { this.toast('⚠️ Elige una cancha para la invitación.'); return; }
+        const cancha = (this.datosCanchas || []).find(c => c.id == canchaId);
+        await this.enviarMensaje(
+            `Te invito a jugar en ${cancha?.nombre || 'una cancha'}`,
+            'invitacion',
+            { cancha_id: Number(canchaId), cancha_nombre: cancha?.nombre || 'Cancha', fecha }
+        );
+    }
+
+    async alRecibirMensaje(m) {
+        if (!this.usuario || m.remitente_id === this.usuario.id) return;
+        const abierto = !document.getElementById('modal-chat').classList.contains('oculto');
+
+        if (abierto && this.chat.convId === m.conversacion_id) {
+            this.pintarMensaje(m);
+            await this.supabase.rpc('marcar_leidos', { conv: m.conversacion_id });
+        } else {
+            this.toast('💬 Tienes un mensaje nuevo.', 'ok');
+            if (abierto && !this.chat.convId) this.abrirBandeja();   // refresca la bandeja
+        }
+        this.actualizarNoLeidos();
+    }
+}   // ← aquí termina la clase MapViewer
 
 
 // Decoración navideña: función independiente de la clase para que NO dependa de que el resto del visor arranque bien
