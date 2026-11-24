@@ -677,6 +677,7 @@
             <div id="contenedor-lista-jugadores" class="jug-grid">
                 <p class="cargando-texto">Cargando jugadores...</p>
             </div>
+            <nav id="jug-paginacion" class="jug-paginacion oculto" aria-label="Paginación de jugadores"></nav>
         </section>
     </main>
 
@@ -1187,8 +1188,7 @@
         </div>
     </div>
 
-        
-        <!-- ============ MODAL: CREAR / EDITAR MI CARTA ============ -->
+    <!-- ============ MODAL: CREAR / EDITAR MI CARTA ============ -->
     <div id="modal-jugador-form" class="modal-overlay oculto">
         <div class="modal-content modal-content--lg" role="dialog" aria-modal="true" aria-labelledby="jug-form-titulo">
             <button type="button" id="jug-cerrar-form" class="modal-cerrar" aria-label="Cerrar">
@@ -1223,14 +1223,15 @@
                             <input type="range" id="jug-tiro" min="1" max="99" value="60"></label>
                         <label>Pase <output id="out-pase">60</output>
                             <input type="range" id="jug-pase" min="1" max="99" value="60"></label>
-                        <label for="jug-regate">Regate <output id="out-regate">60</output></label>
-                            <input type="range" id="jug-regate" min="1" max="99" value="60">
-
-                        <label for="jug-fisico">Físico <output id="out-fisico">60</output></label>
-                            <input type="range" id="jug-fisico" min="1" max="99" value="60">
+                        <label>Regate <output id="out-regate">60</output>
+                            <input type="range" id="jug-regate" min="1" max="99" value="60"></label>
+                        <label>Físico <output id="out-fisico">60</output>
+                            <input type="range" id="jug-fisico" min="1" max="99" value="60"></label>
                     </div>
-                    <label for="jug-foto">Foto de perfil (opcional)</label>
-                    <input type="file" id="jug-foto" accept="image/png,image/jpeg,image/webp">
+                    <div class="grupo-campo">
+                        <label for="jug-foto">Foto de perfil (opcional)</label>
+                        <input type="file" id="jug-foto" class="input-reserva" accept="image/png,image/jpeg,image/webp">
+                    </div>
                     <div class="grupo-campo">
                         <label for="jug-email">Correo (de tu cuenta)</label>
                         <input type="email" id="jug-email" class="input-reserva" readonly>
@@ -1283,6 +1284,7 @@
             </div>
         </div>
     </div>
+
     <!-- Scripts CDN -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>

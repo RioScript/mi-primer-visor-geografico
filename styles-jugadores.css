@@ -166,3 +166,66 @@
 .fut-card__stats--6 span {
     font-size: 0.62rem;
 }
+
+/* ===== Paginación ===== */
+.jug-paginacion {
+    display: flex; align-items: center; justify-content: center; gap: 14px;
+    margin-top: 26px; flex-wrap: wrap;
+}
+.jug-paginacion span { font-size: .9rem; color: var(--m-ink-2); }
+.jug-paginacion button {
+    padding: 9px 16px; border: 1px solid var(--m-rule); border-radius: 999px;
+    background: #fff; color: var(--m-ink-2); font-weight: 600; font-size: .9rem;
+}
+.jug-paginacion button:hover:not(:disabled) { background: var(--m-asfalto); color: #fff; border-color: var(--m-asfalto); }
+.jug-paginacion button:disabled { opacity: .4; cursor: not-allowed; }
+
+/* ===== MÓVIL ===== */
+@media (max-width: 720px) {
+    /* Evita el zoom automático de iOS al enfocar un campo */
+    .input-reserva,
+    .select-nativo,
+    .input-filtro,
+    #modal-jugador-form input,
+    #modal-jugador-form select,
+    #modal-jugador-form textarea,
+    #modal-jugador-detalle textarea,
+    #modal-auth input {
+        font-size: 16px;
+    }
+
+    /* Formulario: la vista previa de la carta más pequeña y arriba */
+    .jug-form-layout { grid-template-columns: 1fr; gap: 14px; }
+    .jug-form-layout .jug-preview { width: 170px; }
+    #modal-jugador-form .modal-content,
+    #modal-jugador-detalle .modal-content { max-height: 92dvh; overflow-y: auto; }
+
+    /* Cartas compactas: 4 por fila en pantallas medianas */
+    .jug-grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 14px 8px;
+    }
+    .jug-grid .jug-item { max-width: none; }
+    .jug-grid .jug-item:hover { transform: none; filter: none; }
+    .jug-grid .jug-item__mia { top: -6px; right: -2px; padding: 1px 6px; font-size: .55rem; }
+
+    .jug-grid .fut-card { padding: 8px 5px 6px; border-radius: 6px; }
+    .jug-grid .fut-card::before { inset: 3px; }
+    .jug-grid .fut-card__top { margin-top: 12%; align-items: center; gap: 2px; }
+    .jug-grid .fut-card__media b { font-size: 1.05rem; }
+    .jug-grid .fut-card__media span { font-size: .55rem; }
+    .jug-grid .fut-card__avatar { width: 34px; height: 34px; font-size: 1.1rem; border-width: 1px; margin: 0; }
+    .jug-grid .fut-card__nombre {
+        margin: 5px 0 2px; padding-bottom: 3px; font-size: .62rem; letter-spacing: .02em;
+    }
+    .jug-grid .fut-card__email,
+    .jug-grid .fut-card__stats { display: none; }          /* el detalle completo se ve al tocar la carta */
+    .jug-grid .fut-card__val { font-size: 0; padding-top: 2px; }   /* oculta estrellas y conteo */
+    .jug-grid .fut-card__val b { font-size: .7rem; }
+}
+
+/* 3 por fila en celulares angostos */
+@media (max-width: 480px) {
+    .jug-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px 8px; }
+    .jug-grid .fut-card__nombre { font-size: .58rem; }
+}

@@ -1017,7 +1017,7 @@ class MapViewer {
         if (btnLimpiar) btnLimpiar.addEventListener('click', () => this.limpiarFiltros());
 
         // Resaltar en el menú la sección que se está viendo
-        const secciones = ['mapa', 'canchas', 'eventos', 'app-footer'].map(id => document.getElementById(id)).filter(Boolean);
+        const secciones = ['mapa', 'canchas', 'eventos', 'jugadores', 'app-footer'].map(id => document.getElementById(id)).filter(Boolean);
         const enlaces = document.querySelectorAll('.main-nav .nav-link[data-section]');
         const marcarSeccion = () => {
             const y = window.scrollY + 140;
@@ -3511,6 +3511,7 @@ class MapViewer {
     // JUGADORES · cartas estilo FIFA
     // ------------------------------------------------------------------
     initJugadores() {
+        this.paginaJugadores = 1;
         const $ = (id) => document.getElementById(id);
         this.jugadores = [];
         this.jugadorDetalleId = null;
@@ -3520,15 +3521,18 @@ class MapViewer {
         $('btn-agregar-jugador')?.addEventListener('click', () => this.abrirFormJugador());
         $('buscador-jugadores')?.addEventListener('input', (e) => {
             this.filtroJugadores.texto = e.target.value.trim().toLowerCase();
+            this.paginaJugadores = 1;
             this.renderizarJugadores();
         });
         $('select-orden-jugadores')?.addEventListener('change', (e) => {
             this.filtroJugadores.orden = e.target.value;
+            this.paginaJugadores = 1;
             this.renderizarJugadores();
         });
         document.querySelectorAll('#jugadores-chips [data-pos]').forEach(b => b.addEventListener('click', () => {
             this.filtroJugadores.pos = b.dataset.pos;
             document.querySelectorAll('#jugadores-chips [data-pos]').forEach(x => x.classList.toggle('is-on', x === b));
+            this.paginaJugadores = 1;
             this.renderizarJugadores();
         }));
 
@@ -3550,6 +3554,9 @@ class MapViewer {
             if (s) this.pintarEstrellasJugador(parseInt(s.dataset.value));
         });
         $('form-valorar-jugador')?.addEventListener('submit', async (e) => { e.preventDefault(); await this.guardarValoracionJugador(); });
+
+        // Al girar el celular o cambiar el tamaño, se recalcula cuántas cartas caben por página
+        window.addEventListener('resize', this.debounce(() => this.renderizarJugadores(), 200));
 
         this.cargarJugadores();
     }
@@ -3578,7 +3585,7 @@ class MapViewer {
         this.renderizarJugadores();
     }
 
-    
+
     // Media general de la carta según la posición (con las 6 cualidades)
     calcularMediaJugador(j) {
         const pesos = {
@@ -3640,6 +3647,14 @@ class MapViewer {
             </div>`;
     }
 
+    // Cuántas columnas tiene la rejilla ahora mismo (según el ancho de pantalla)
+    columnasJugadores() {
+        const g = document.getElementById('contenedor-lista-jugadores');
+        if (!g) return 1;
+        const n = getComputedStyle(g).gridTemplateColumns.split(' ').filter(Boolean).length;
+        return Math.max(1, n);
+    }
+
     renderizarJugadores() {
         const cont = document.getElementById('contenedor-lista-jugadores');
         if (!cont) return;
@@ -3658,11 +3673,19 @@ class MapViewer {
 
         if (lista.length === 0) {
             cont.innerHTML = '<p class="cargando-texto">Aún no hay jugadores con ese filtro. ¡Sé el primero en agregarte!</p>';
+            this.renderizarPaginacionJugadores(1);
             return;
         }
 
+        // Máximo 4 filas por página
+        const FILAS = 4;
+        const porPagina = this.columnasJugadores() * FILAS;
+        const totalPaginas = Math.max(1, Math.ceil(lista.length / porPagina));
+        this.paginaJugadores = Math.min(Math.max(1, this.paginaJugadores || 1), totalPaginas);
+        const inicio = (this.paginaJugadores - 1) * porPagina;
+
         cont.innerHTML = '';
-        lista.forEach(j => {
+        lista.slice(inicio, inicio + porPagina).forEach(j => {
             const esMia = this.usuario && j.user_id === this.usuario.id;
             const item = document.createElement('div');
             item.className = 'jug-item' + (esMia ? ' is-mia' : '');
@@ -3672,6 +3695,27 @@ class MapViewer {
             item.addEventListener('keydown', (e) => { if (e.key === 'Enter') this.abrirDetalleJugador(j.id); });
             cont.appendChild(item);
         });
+
+        this.renderizarPaginacionJugadores(totalPaginas);
+    }
+
+    renderizarPaginacionJugadores(totalPaginas) {
+        const nav = document.getElementById('jug-paginacion');
+        if (!nav) return;
+        if (totalPaginas <= 1) { nav.classList.add('oculto'); nav.innerHTML = ''; return; }
+
+        const p = this.paginaJugadores;
+        nav.classList.remove('oculto');
+        nav.innerHTML = `
+            <button type="button" data-dir="-1" ${p === 1 ? 'disabled' : ''} aria-label="Página anterior">‹ Anterior</button>
+            <span>Página <b>${p}</b> de <b>${totalPaginas}</b></span>
+            <button type="button" data-dir="1" ${p === totalPaginas ? 'disabled' : ''} aria-label="Página siguiente">Siguiente ›</button>`;
+
+        nav.querySelectorAll('[data-dir]').forEach(b => b.addEventListener('click', () => {
+            this.paginaJugadores = p + parseInt(b.dataset.dir);
+            this.renderizarJugadores();
+            document.getElementById('jugadores')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }));
     }
 
     // ---- Crear / editar mi carta ----
