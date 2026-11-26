@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://sabaneta-en-la-jugada.vercel.app/sitemap.xml
