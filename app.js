@@ -4097,7 +4097,20 @@ class MapViewer {
         const { data } = await this.supabase.from('mis_conversaciones').select('no_leidos');
         const total = (data || []).reduce((s, c) => s + Number(c.no_leidos || 0), 0);
         const badge = document.getElementById('badge-mensajes');
-        if (badge) { badge.textContent = total; badge.classList.toggle('oculto', total === 0); }
+        const boton = document.getElementById('btn-mensajes');
+        if (!badge) return;
+
+        const anterior = Number(badge.dataset.total || 0);
+        badge.dataset.total = total;
+        badge.textContent = total > 99 ? '99+' : total;
+        badge.classList.toggle('oculto', total === 0);
+        boton?.classList.toggle('tiene-nuevos', total > 0);
+
+        if (total > anterior) {            // llegó algo nuevo: animar
+            badge.classList.remove('pop');
+            void badge.offsetWidth;
+            badge.classList.add('pop');
+        }
     }
 
     mostrarVistaChat(vista) {
@@ -4137,8 +4150,13 @@ class MapViewer {
             fila.className = 'chat__fila';
             fila.innerHTML = `
                 <span class="chat__avatar">${this.escaparHtml(nombre.charAt(0).toUpperCase())}</span>
-                <span class="chat__fila-txt"><strong>${this.escaparHtml(nombre)}</strong>
-                    <small>${this.escaparHtml(c.ultimo || '')}</small></span>
+                <span class="chat__fila-txt">
+                    <span class="chat__fila-cab">
+                        <strong>${this.escaparHtml(nombre)}</strong>
+                        <time>${this.escaparHtml(this.etiquetaBandeja(c.ultimo_mensaje_at))}</time>
+                    </span>
+                    <small>${this.escaparHtml(c.ultimo || '')}</small>
+                </span>
                 ${Number(c.no_leidos) > 0 ? `<span class="badge">${Number(c.no_leidos)}</span>` : ''}`;
             fila.addEventListener('click', () => this.abrirChat(c.otro_id, nombre));
             lista.appendChild(fila);
@@ -4150,7 +4168,7 @@ class MapViewer {
         const { data: convId, error } = await this.supabase.rpc('obtener_o_crear_conversacion', { otro: otroId });
         if (error) { console.error(error); this.toast('❌ No se pudo abrir el chat.'); return; }
 
-        Object.assign(this.chat, { convId, otroId, ids: new Set() });
+        Object.assign(this.chat, { convId, otroId, ids: new Set(), ultimoDia: null });
         document.getElementById('chat-titulo').textContent = nombre;
         document.getElementById('chat-mensajes').innerHTML = '';
 
@@ -4168,10 +4186,59 @@ class MapViewer {
         this.actualizarNoLeidos();
     }
 
+        // Clave de día en hora local (para saber cuándo cambia el día entre mensajes)
+    claveDia(fecha) {
+        const d = new Date(fecha);
+        return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+    }
+
+    // Separador dentro del chat: Hoy / Ayer / lunes / 12 de noviembre
+    etiquetaDia(fecha) {
+        const d = new Date(fecha);
+        const hoy = new Date();
+        const inicio = (x) => new Date(x.getFullYear(), x.getMonth(), x.getDate());
+        const dif = Math.round((inicio(hoy) - inicio(d)) / 86400000);
+
+        if (dif === 0) return 'Hoy';
+        if (dif === 1) return 'Ayer';
+        if (dif > 1 && dif < 7) {
+            const dia = d.toLocaleDateString('es-CO', { weekday: 'long' });
+            return dia.charAt(0).toUpperCase() + dia.slice(1);
+        }
+        return d.toLocaleDateString('es-CO', {
+            day: 'numeric', month: 'long',
+            year: d.getFullYear() !== hoy.getFullYear() ? 'numeric' : undefined
+        });
+    }
+
+    // Fecha corta para la bandeja: hora si es de hoy, "Ayer", día de la semana o dd/mm/aa
+    etiquetaBandeja(fecha) {
+        if (!fecha) return '';
+        const d = new Date(fecha);
+        const hoy = new Date();
+        const inicio = (x) => new Date(x.getFullYear(), x.getMonth(), x.getDate());
+        const dif = Math.round((inicio(hoy) - inicio(d)) / 86400000);
+
+        if (dif === 0) return d.toLocaleTimeString('es-CO', { hour: 'numeric', minute: '2-digit' });
+        if (dif === 1) return 'Ayer';
+        if (dif > 1 && dif < 7) return d.toLocaleDateString('es-CO', { weekday: 'short' }).replace('.', '');
+        return d.toLocaleDateString('es-CO', { day: '2-digit', month: '2-digit', year: '2-digit' });
+    }
+
     pintarMensaje(m) {
         if (this.chat.ids.has(m.id)) return;          // evita duplicados (eco de Realtime)
         this.chat.ids.add(m.id);
         const cont = document.getElementById('chat-mensajes');
+        
+        const dia = this.claveDia(m.created_at);
+        if (this.chat.ultimoDia !== dia) {
+            this.chat.ultimoDia = dia;
+            const sep = document.createElement('div');
+            sep.className = 'chat__dia';
+            sep.innerHTML = `<span>${this.escaparHtml(this.etiquetaDia(m.created_at))}</span>`;
+            cont.appendChild(sep);
+        }
+
         const mio = m.remitente_id === this.usuario.id;
         const hora = new Date(m.created_at).toLocaleTimeString('es-CO', { hour: 'numeric', minute: '2-digit' });
 
