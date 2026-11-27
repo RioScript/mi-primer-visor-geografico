@@ -1,0 +1,163 @@
+/* ===== Remodelación de canchas ===== */
+:root { --rem-y: #f5c518; --rem-k: #11261f; }
+
+/* Cinta de obra */
+.rem-panel__cinta, .rem-card__cinta, .aviso-remodelacion::before {
+  height: 8px;
+  background: repeating-linear-gradient(-45deg, var(--rem-y) 0 12px, var(--rem-k) 12px 24px);
+}
+
+/* ---------- Panel en el formulario del admin ---------- */
+.rem-panel {
+  grid-column: 1 / -1;
+  overflow: hidden;
+  margin-top: 14px;
+  background: #fffbe8;
+  border: 1px solid #ecd46b;
+  border-radius: 12px;
+}
+.rem-panel.oculto { display: none !important; }
+.rem-panel__cuerpo { display: flex; align-items: center; gap: 14px; padding: 14px 16px; flex-wrap: wrap; }
+.rem-panel__ico {
+  flex: none; display: grid; place-items: center; width: 42px; height: 42px;
+  border-radius: 12px; background: var(--rem-k); color: var(--rem-y);
+}
+.rem-panel__ico .icon { width: 22px; height: 22px; }
+.rem-panel__txt { flex: 1 1 220px; min-width: 0; display: grid; gap: 2px; }
+.rem-panel__txt strong { color: var(--rem-k); font-size: .98rem; }
+.rem-panel__txt small { color: #6b5a12; font-size: .8rem; line-height: 1.3; }
+.rem-panel .form-mensaje { margin: 0; padding: 0 16px 12px; }
+
+/* Botón dentro de la fila del listado */
+.rem-btn--sm { padding: 6px 12px; font-size: .8rem; border-radius: 8px; box-shadow: 0 4px 10px rgba(245, 197, 24, .3); }
+.rem-btn--sm .icon { width: 15px; height: 15px; }
+.rem-btn--habilitar { color: #fff; background: linear-gradient(135deg, #0f8a5f, #0a5039); box-shadow: 0 4px 10px rgba(15, 107, 79, .3); }
+.admin-cancha-row__acc { flex-wrap: wrap; }
+
+/* Tarjeta de confirmación (misma estética de obra) */
+.rem-card--confirmar .rem-confirm__ico {
+  display: grid; place-items: center; width: 56px; height: 56px; margin: 6px auto 10px;
+  border-radius: 16px; background: var(--rem-y); color: var(--rem-k);
+}
+.rem-card--confirmar .rem-confirm__ico .icon { width: 30px; height: 30px; animation: rem-mini 1.2s ease-in-out infinite; transform-origin: 80% 80%; }
+.rem-confirm__acciones { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+.rem-card .btn--ghost { color: #e5f3ec; border-color: rgba(255, 255, 255, .25); }
+.rem-card .btn--ghost:hover { background: rgba(255, 255, 255, .08); }
+
+.rem-btn {
+  display: inline-flex; align-items: center; gap: 8px; padding: 10px 16px;
+  border: 0; border-radius: 10px; cursor: pointer; font-weight: 800; font-size: .88rem;
+  color: var(--rem-k); background: linear-gradient(180deg, #ffd84d, var(--rem-y));
+  box-shadow: 0 6px 16px rgba(245, 197, 24, .35);
+  transition: transform .15s, box-shadow .2s;
+}
+.rem-btn .icon { width: 18px; height: 18px; }
+.rem-btn:hover:not(:disabled) { transform: translateY(-2px); }
+.rem-btn:hover:not(:disabled) .icon { animation: rem-mini 0.5s ease-in-out infinite; transform-origin: 80% 80%; }
+.rem-btn:disabled { opacity: .6; cursor: wait; }
+@keyframes rem-mini { 50% { transform: rotate(-28deg); } }
+
+.rem-panel--activa { background: #fff5f3; border-color: #f0b4ab; }
+.rem-panel--activa .rem-panel__ico { animation: rem-mini 1.2s ease-in-out infinite; transform-origin: 80% 80%; }
+.rem-panel--activa .rem-panel__txt small { color: #8a3a30; }
+.rem-panel--activa .rem-btn { color: #fff; background: linear-gradient(135deg, #0f8a5f, #0a5039); box-shadow: 0 6px 16px rgba(15, 107, 79, .35); }
+
+/* ---------- Pantalla de animación ---------- */
+.rem-overlay {
+  position: fixed; inset: 0; z-index: 38000; display: grid; place-items: center; padding: 20px;
+  background: rgba(8, 24, 19, .72); backdrop-filter: blur(5px);
+  animation: rem-fondo .2s ease-out;
+}
+.rem-overlay--sale { opacity: 0; transition: opacity .26s; }
+@keyframes rem-fondo { from { opacity: 0; } }
+
+.rem-card {
+  width: 400px; max-width: 100%; overflow: hidden; text-align: center; padding: 0 24px 24px;
+  color: #e5f3ec; border-radius: 18px; border: 1px solid rgba(255, 255, 255, .13);
+  background: linear-gradient(160deg, #12382d, #0a211a);
+  box-shadow: 0 40px 100px rgba(0, 0, 0, .55);
+  animation: rem-entra .4s cubic-bezier(.2, .9, .25, 1.1);
+}
+.rem-card__cinta { margin: 0 -24px 14px; }
+@keyframes rem-entra { from { opacity: 0; transform: translateY(24px) scale(.96); } }
+.rem-card h3 { font-size: 1.35rem; color: #fff; margin: 4px 0; }
+.rem-card p { margin: 0 auto 16px; max-width: 34ch; color: #a9c7bb; font-size: .88rem; }
+
+.rem-escena { width: 100%; max-width: 300px; height: auto; display: block; margin: 0 auto 6px; overflow: visible; }
+.rem-suelo { fill: rgba(255, 255, 255, .22); }
+
+/* Ladrillos que se van levantando */
+.rem-ladrillo {
+  fill: #e4572e; stroke: #7a2a14; stroke-width: 1.5;
+  animation: rem-ladrillo .4s cubic-bezier(.2, 1.4, .4, 1) both;
+  animation-delay: calc(var(--i) * .32s + .15s);
+}
+@keyframes rem-ladrillo { from { opacity: 0; transform: translateY(-30px); } }
+
+/* Martillo golpeando */
+.rem-martillo { transform-origin: 200px 140px; animation: rem-golpe .9s ease-in-out infinite; }
+.rem-mango { fill: #c68a4a; stroke: #7a4d1f; stroke-width: 1.5; }
+.rem-cabeza { fill: #9aa7a1; stroke: #4b5752; stroke-width: 2; }
+@keyframes rem-golpe {
+  0%, 100% { transform: rotate(38deg); }
+  40%      { transform: rotate(-44deg); }
+  50%      { transform: rotate(-34deg); }
+}
+.rem-chispas path {
+  fill: none; stroke: var(--rem-y); stroke-width: 3; stroke-linecap: round;
+  opacity: 0; animation: rem-chispa .9s ease-out infinite;
+}
+@keyframes rem-chispa { 0%, 38% { opacity: 0; } 42% { opacity: 1; } 65%, 100% { opacity: 0; } }
+
+/* Barra de progreso */
+.rem-barra { height: 7px; border-radius: 999px; background: rgba(255, 255, 255, .09); overflow: hidden; }
+.rem-barra span {
+  display: block; height: 100%; width: 0; border-radius: inherit;
+  background: linear-gradient(90deg, var(--rem-y), #ffd84d);
+  animation: rem-barra 2.6s linear forwards;
+}
+@keyframes rem-barra { to { width: 100%; } }
+
+/* Variante "habilitada" */
+.rem-overlay--ok .rem-card__cinta {
+  background: repeating-linear-gradient(-45deg, #34d399 0 12px, #0f8a5f 12px 24px);
+}
+.rem-overlay--ok .rem-barra span { animation-duration: 2s; background: linear-gradient(90deg, #34d399, #6ee7b7); }
+.rem-ok-bola { fill: #34d399; transform-box: fill-box; transform-origin: center; animation: rem-pop .5s cubic-bezier(.2, 1.4, .4, 1) both; }
+.rem-ok-check { fill: none; stroke: #0b241d; stroke-width: 7; stroke-linecap: round; stroke-linejoin: round;
+  stroke-dasharray: 1; stroke-dashoffset: 1; animation: rem-traza .5s .35s ease-out forwards; }
+.rem-ok-aro { fill: none; stroke: #34d399; stroke-width: 2; transform-box: fill-box; transform-origin: center; opacity: 0;
+  animation: rem-onda 1.6s ease-out infinite; }
+.rem-ok-aro--2 { animation-delay: .8s; }
+@keyframes rem-pop { from { transform: scale(0); } }
+@keyframes rem-traza { to { stroke-dashoffset: 0; } }
+@keyframes rem-onda { 0% { transform: scale(1); opacity: .8; } 100% { transform: scale(2.4); opacity: 0; } }
+
+/* ---------- Visor: tarjeta, aviso en el detalle ---------- */
+.cancha-card--remodelacion .cancha-card__img img { filter: grayscale(1) brightness(.8); }
+.cancha-card__remod {
+  position: absolute; left: 0; right: 0; bottom: 0; z-index: 2; padding: 6px 10px;
+  display: flex; align-items: center; gap: 6px; font-size: .74rem; font-weight: 800;
+  letter-spacing: .04em; text-transform: uppercase; color: var(--rem-k);
+  background: repeating-linear-gradient(-45deg, var(--rem-y) 0 12px, #ffd84d 12px 24px);
+}
+.cancha-card__remod .icon { width: 14px; height: 14px; animation: rem-mini 1s ease-in-out infinite; transform-origin: 80% 80%; }
+
+.aviso-remodelacion { overflow: hidden; margin: 14px 0; border-radius: 12px; background: #fffbe8; border: 1px solid #ecd46b; }
+.aviso-remodelacion__cuerpo { display: flex; gap: 12px; align-items: center; padding: 12px 14px; color: #5c4a05; font-size: .86rem; }
+.aviso-remodelacion__cuerpo .icon { flex: none; width: 26px; height: 26px; color: var(--rem-k); animation: rem-mini 1s ease-in-out infinite; transform-origin: 80% 80%; }
+.aviso-remodelacion strong { display: block; color: var(--rem-k); }
+
+@media (prefers-reduced-motion: reduce) {
+  .rem-martillo, .rem-chispas path, .rem-btn .icon, .rem-panel__ico,
+  .cancha-card__remod .icon, .aviso-remodelacion__cuerpo .icon { animation: none !important; }
+}
+
+/* Etiqueta en el listado del admin */
+.rem-pill {
+  margin-left: 6px; padding: 1px 8px; border-radius: 999px;
+  font-size: .68rem; font-weight: 800; letter-spacing: .03em; text-transform: uppercase;
+  color: #11261f; background: #f5c518;
+}
+.admin-cancha-row--remod { border-left-color: #f5c518 !important; background: #fffdf2 !important; }
+.admin-cancha-row--remod .admin-cancha-row__thumb img { filter: grayscale(1); }

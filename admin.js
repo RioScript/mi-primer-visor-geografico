@@ -1,6 +1,8 @@
 // admin.js · Panel de administración (página completa)
 const SUPABASE_URL = "https://vdltyryvmphxdcxjrgsf.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZkbHR5cnl2bXBoeGRjeGpyZ3NmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc3NTU5NTgsImV4cCI6MjEwMzMzMTk1OH0.vxqi58vWcfbWqoRTs9-AhalTOJS5rkOGQKbGrCOb9WA";
+const ICONO_MARTILLO = `<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 12-8.373 8.373a1 1 0 1 1-3-3L12 9"/><path d="m18 15 4-4"/><path d="m21.5 11.5-1.914-1.914A2 2 0 0 1 19 8.172V7l-2.26-2.26a6 6 0 0 0-4.202-1.756L9 2.96l.92.82A6.18 6.18 0 0 1 12 8.4V10l2 2h1.172a2 2 0 0 1 1.414.586L18.5 14.5"/></svg>`;
+const ICONO_CHECK = `<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>`;
 
 class AdminApp {
     constructor() {
@@ -184,6 +186,7 @@ class AdminApp {
         $('btn-admin-ubicar-mapa').addEventListener('click', () => this.irAlMapa());
         ['admin-cancha-lat', 'admin-cancha-lng'].forEach((id) => $(id).addEventListener('input', () => this.estadoUbicacion()));
         $('form-crear-cancha-admin').addEventListener('submit', (e) => { e.preventDefault(); this.guardarCancha(); });
+        this.initRemodelacion();
     }
 
     async cargarCanchas() {
@@ -220,19 +223,24 @@ class AdminApp {
         if (!lista.length) { cont.innerHTML = '<p class="modal-subtexto">No hay canchas que coincidan con la búsqueda.</p>'; return; }
         lista.forEach((c) => {
             const sup = this.infoSuperficie(c.surface);
+            const remod = this.estaEnRemodelacion(c);
             const foto = c.imagen_url ? `<img src="${this.esc(c.imagen_url)}" alt="" loading="lazy" onerror="this.remove()">` : '';
             const fila = document.createElement('div');
-            fila.className = 'row-card admin-cancha-row';
+            fila.className = 'row-card admin-cancha-row' + (remod ? ' admin-cancha-row--remod' : '');
             fila.innerHTML = `
                 <span class="admin-cancha-row__thumb">${foto}</span>
                 <div class="admin-cancha-row__txt">
-                    <strong>${this.esc(c.nombre || 'Cancha de fútbol')}</strong>
+                    <strong>${this.esc(c.nombre || 'Cancha de fútbol')}${remod ? '<span class="rem-pill">En remodelación</span>' : ''}</strong>
                     <small><i style="--dot:${sup.color}"></i>${this.esc(sup.label)} · ${this.esc(c.barrio)}</small>
                 </div>
                 <div class="admin-cancha-row__acc">
+                    <button type="button" class="rem-btn rem-btn--sm${remod ? ' rem-btn--habilitar' : ''}" data-remodelar>
+                        ${remod ? ICONO_CHECK + 'Habilitar' : ICONO_MARTILLO + 'Remodelar'}
+                    </button>
                     <button type="button" class="btn btn--secondary btn--sm" data-editar>Editar</button>
                     <button type="button" class="btn btn--peligro-suave btn--sm" data-eliminar>Eliminar</button>
                 </div>`;
+            fila.querySelector('[data-remodelar]').addEventListener('click', (e) => this.cambiarRemodelacion(c, e.currentTarget));
             fila.querySelector('[data-editar]').addEventListener('click', () => this.abrirFormCancha(c));
             fila.querySelector('[data-eliminar]').addEventListener('click', () => this.eliminarCancha(c.id));
             cont.appendChild(fila);
@@ -284,6 +292,7 @@ class AdminApp {
         }
         this.previewImagen();
         this.estadoUbicacion();
+        this.actualizarPanelRemodelacion(cancha);
         this.vistaCanchas('form');
     }
 
@@ -418,6 +427,156 @@ class AdminApp {
         this.toast('Cancha eliminada con éxito.', 'ok');
         await this.cargarCanchas();
     }
+
+        // ------------------------------------------------------------------ remodelación
+    estaEnRemodelacion(c) {
+        return !!c && (c.en_remodelacion === true || c.estado === 'En Reconstrucción');
+    }
+
+    initRemodelacion() {
+        const form = this.$('form-crear-cancha-admin');
+        if (!form || this.$('rem-panel')) return;
+        const panel = document.createElement('section');
+        panel.id = 'rem-panel';
+        panel.className = 'rem-panel oculto';
+        panel.innerHTML = `
+            <div class="rem-panel__cinta" aria-hidden="true"></div>
+            <div class="rem-panel__cuerpo">
+                <span class="rem-panel__ico">${ICONO_MARTILLO}</span>
+                <div class="rem-panel__txt"><strong id="rem-titulo"></strong><small id="rem-sub"></small></div>
+                <button type="button" id="rem-btn" class="rem-btn"></button>
+            </div>`;
+        const acciones = form.querySelector('.admin-form-acciones');
+        if (acciones) acciones.before(panel); else form.appendChild(panel);
+        this.$('rem-btn').addEventListener('click', () => this.cambiarRemodelacion());
+    }
+
+    actualizarPanelRemodelacion(c) {
+        const panel = this.$('rem-panel');
+        if (!panel) return;
+        // Solo al editar una cancha existente (al crear una nueva no aplica)
+        if (!c) { panel.classList.add('oculto'); return; }
+        const activa = this.estaEnRemodelacion(c);
+        panel.classList.remove('oculto');
+        panel.classList.toggle('rem-panel--activa', activa);
+        if (activa) {
+            const f = c.remodelacion_desde
+                ? new Date(c.remodelacion_desde).toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
+            this.$('rem-titulo').textContent = 'Cancha en remodelación';
+            this.$('rem-sub').textContent = `Deshabilitada para el público${f ? ' desde el ' + f : ''}. No admite eventos nuevos.`;
+            this.$('rem-btn').innerHTML = `${ICONO_CHECK}Habilitar nuevamente`;
+        } else {
+            this.$('rem-titulo').textContent = 'Remodelación';
+            this.$('rem-sub').textContent = 'Si la activas, la cancha queda deshabilitada y no se podrán crear eventos en ella.';
+            this.$('rem-btn').innerHTML = `${ICONO_MARTILLO}Poner en remodelación`;
+        }
+    }
+
+    animarRemodelacion(activar) {
+        const ov = document.createElement('div');
+        ov.className = 'rem-overlay' + (activar ? '' : ' rem-overlay--ok');
+        const escena = activar ? `
+            <svg class="rem-escena" viewBox="0 0 260 170" aria-hidden="true">
+                <rect class="rem-suelo" x="20" y="146" width="220" height="6" rx="3"/>
+                <g class="rem-muro">
+                    <rect class="rem-ladrillo" style="--i:0" x="50"  y="124" width="46" height="20" rx="2"/>
+                    <rect class="rem-ladrillo" style="--i:1" x="100" y="124" width="46" height="20" rx="2"/>
+                    <rect class="rem-ladrillo" style="--i:2" x="150" y="124" width="46" height="20" rx="2"/>
+                    <rect class="rem-ladrillo" style="--i:3" x="75"  y="102" width="46" height="20" rx="2"/>
+                    <rect class="rem-ladrillo" style="--i:4" x="125" y="102" width="46" height="20" rx="2"/>
+                    <rect class="rem-ladrillo" style="--i:5" x="100" y="80"  width="46" height="20" rx="2"/>
+                </g>
+                <g class="rem-chispas"><path d="M138 82l-10-12M146 80l2-16M152 86l14-8"/></g>
+                <g class="rem-martillo">
+                    <rect class="rem-mango" x="196" y="64" width="8" height="76" rx="4"/>
+                    <rect class="rem-cabeza" x="176" y="50" width="48" height="20" rx="4"/>
+                </g>
+            </svg>` : `
+            <svg class="rem-escena" viewBox="0 0 260 170" aria-hidden="true">
+                <circle class="rem-ok-aro" cx="130" cy="85" r="36"/>
+                <circle class="rem-ok-aro rem-ok-aro--2" cx="130" cy="85" r="36"/>
+                <circle class="rem-ok-bola" cx="130" cy="85" r="34"/>
+                <path class="rem-ok-check" pathLength="1" d="M113 86l12 12 24-26"/>
+            </svg>`;
+        ov.innerHTML = `
+            <div class="rem-card" role="dialog" aria-modal="true" aria-live="polite">
+                <div class="rem-card__cinta" aria-hidden="true"></div>
+                ${escena}
+                <h3>${activar ? 'Poniendo la cancha en remodelación' : '¡Cancha habilitada de nuevo!'}</h3>
+                <p>${activar ? 'Queda deshabilitada: no se podrán publicar eventos mientras dure la obra.'
+                             : 'Ya vuelve a estar disponible para jugar y publicar eventos.'}</p>
+                <div class="rem-barra"><span></span></div>
+            </div>`;
+        document.body.appendChild(ov);
+        return {
+            fin: new Promise((r) => setTimeout(r, activar ? 2600 : 2000)),
+            cerrar: () => { ov.classList.add('rem-overlay--sale'); setTimeout(() => ov.remove(), 260); }
+        };
+    }
+
+    confirmarRemodelacion(c) {
+        return new Promise((resolve) => {
+            const ov = document.createElement('div');
+            ov.className = 'rem-overlay';
+            ov.innerHTML = `
+                <div class="rem-card rem-card--confirmar" role="alertdialog" aria-modal="true">
+                    <div class="rem-card__cinta" aria-hidden="true"></div>
+                    <span class="rem-confirm__ico">${ICONO_MARTILLO}</span>
+                    <h3>¿Poner la cancha en remodelación?</h3>
+                    <p></p>
+                    <div class="rem-confirm__acciones">
+                        <button type="button" class="btn btn--ghost" data-r="0">Cancelar</button>
+                        <button type="button" class="rem-btn" data-r="1">${ICONO_MARTILLO}Sí, remodelar</button>
+                    </div>
+                </div>`;
+            ov.querySelector('p').textContent = `"${c.nombre || 'La cancha'}" quedará deshabilitada y no admitirá eventos nuevos hasta que la habilites de nuevo.`;
+            const cerrar = (r) => { ov.classList.add('rem-overlay--sale'); setTimeout(() => ov.remove(), 260); resolve(r); };
+            ov.addEventListener('click', (e) => {
+                if (e.target === ov) return cerrar(false);
+                const b = e.target.closest('[data-r]');
+                if (b) cerrar(b.dataset.r === '1');
+            });
+            document.body.appendChild(ov);
+            ov.querySelector('[data-r="0"]').focus();
+        });
+    }
+
+    async cambiarRemodelacion(c, btn) {
+        if (!c || this.remOcupado) return;
+        const activar = !this.estaEnRemodelacion(c);
+
+        if (activar && !(await this.confirmarRemodelacion(c))) return;
+
+        this.remOcupado = true;
+        if (btn) btn.disabled = true;
+
+        const cambios = activar
+            ? { en_remodelacion: true, remodelacion_desde: new Date().toISOString(), estado: 'En Reconstrucción' }
+            : { en_remodelacion: false, remodelacion_desde: null, estado: 'Disponible' };
+
+        const anim = this.animarRemodelacion(activar);
+        const [res] = await Promise.all([
+            this.sb.from('canchas').update(cambios).eq('id', c.id).select('id'),
+            anim.fin
+        ]);
+        anim.cerrar();
+
+        if (res.error || !res.data?.length) {
+            console.error(res.error);
+            const falta = /en_remodelacion|remodelacion_desde/.test(res.error?.message || '');
+            this.toast(falta
+                ? '❌ Faltan las columnas de remodelación: ejecuta el SQL en Supabase.'
+                : '❌ No se pudo guardar' + (res.error ? ': ' + res.error.message : ' (revisa las políticas de UPDATE en canchas).'));
+            if (btn) btn.disabled = false;
+        } else {
+            Object.assign(c, cambios);
+            this.renderListaCanchas();
+            if (this.adminEventos.length) this.renderEventos();
+            this.toast(activar ? '✅ Cancha en remodelación.' : '✅ Cancha habilitada nuevamente.');
+        }
+        this.remOcupado = false;
+    }
+
 
     // ------------------------------------------------------------------ análisis GIS
     initGis() {
@@ -680,7 +839,7 @@ class AdminApp {
         const tipos = {
             'Torneo': { clase: 'torneo', icono: '#i-trophy', etiqueta: 'Torneo' },
             'Partido Recreativo': { clase: 'recreativo', icono: '#i-users', etiqueta: 'Recreativo' },
-            'Reto / Apostado': { clase: 'reto', icono: '#i-target', etiqueta: 'Reto' }
+            'Reto / Apostado': { clase: 'reto', icono: '#i-target', etiqueta: ' Reto' }
         };
         const lista = todos.filter((ev) => {
             const activo = this.esEventoActivo(ev);
@@ -701,6 +860,7 @@ class AdminApp {
             const t = tipos[ev.tipo_evento] || { clase: 'recreativo', icono: '#i-users', etiqueta: ev.tipo_evento || 'Evento' };
             const activo = this.esEventoActivo(ev);
             const cancha = this.datosCanchas.find((c) => c.id == ev.cancha_id);
+            const remod = cancha ? this.estaEnRemodelacion(cancha) : false;
             const titulo = this.esc(ev.titulo || ev.tipo_evento || 'Evento');
             let cuando = '';
             if (ev.tipo_evento === 'Torneo' && ev.fecha_inicio) {
@@ -709,7 +869,7 @@ class AdminApp {
             } else if (ev.fecha_hora) cuando = this.formatearFecha(ev.fecha_hora);
             const media = ev.banner_url ? `<img src="${this.esc(ev.banner_url)}" alt="" loading="lazy" decoding="async" onerror="this.remove()">` : '';
             const fila = document.createElement('article');
-            fila.className = `admin-evt admin-evt--${t.clase}${activo ? '' : ' is-fin'}`;
+            fila.className = `admin-evt admin-evt--${t.clase}${activo ? '' : ' is-fin'}${remod ? ' admin-evt--remod' : ''}`;
             fila.style.animationDelay = `${Math.min(i, 8) * 35}ms`;
             fila.innerHTML = `
                 <div class="admin-evt__media"><svg class="icon"><use href="${t.icono}"/></svg>${media}</div>
@@ -718,7 +878,7 @@ class AdminApp {
                         <span class="admin-evt__pill ${activo ? 'is-activo' : 'is-fin'}">${activo ? 'Activo' : 'Finalizado'}</span></div>
                     <div class="admin-evt__meta">
                         <span class="admin-evt__tipo">${this.esc(t.etiqueta)}</span>
-                        <span><svg class="icon"><use href="#i-pin"/></svg>${this.esc(cancha?.nombre || 'Cancha sin identificar')}</span>
+                        <span><svg class="icon"><use href="#i-pin"/></svg>${this.esc(cancha?.nombre || 'Cancha sin identificar')}${remod ? '<span class="rem-pill">En remodelación</span>' : ''}</span>
                         ${cuando ? `<span><svg class="icon"><use href="#i-check"/></svg>${this.esc(cuando)}</span>` : ''}
                         <span><svg class="icon"><use href="#i-users"/></svg>${this.esc(ev.contacto || 'Sin contacto')}</span>
                     </div>
